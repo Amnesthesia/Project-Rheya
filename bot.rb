@@ -18,6 +18,7 @@ class RheyaIRC
   match /^!follow\s.+/, { method: :follow }
   match /^!mentions/, { method: :mentioned}
   match /^!read\s.+/, {method: :read }
+  match /^!wiki\s.+/, {method: :wiki }
   
   timer 600, method: :mentioned
   
@@ -83,6 +84,21 @@ class RheyaIRC
   def mentioned(msg)
     @rheya.last_mentions.each do |m|
       msg.reply m
+    end
+  end
+  
+  def wiki(msg)
+    message = strip_command(msg.message)
+    
+    wiki = @rheya.eyes.get_wiki message
+    
+    unless wiki.empty?
+      wiki.each_with_index do |i,w|
+        if i > 1
+          break
+        end
+        message.reply w
+      end
     end
   end
   

@@ -6,7 +6,7 @@ require "./see.rb"
     
 class Mouth
   
-  attr_accessor :debug, :db, :question_starters
+  attr_accessor :debug, :db, :question_starters, :previously_said
   debug = true
  
   
@@ -23,6 +23,7 @@ class Mouth
       :oauth_token_secret => "360KsViDUl7P7ajTmxBYqzNxkW2BnWKAl30Y2Umy4"
     )
     @last_mention = nil
+    @previously_said = []
     
   end
 
@@ -36,7 +37,7 @@ class Mouth
   def get_word(word, options = { direction: :forward, context: [] })
   
     word_data = nil
-    
+    puts "I got the word %s" %word
     # If we specified context, as in when replying to something, we need to add some stuff to our query
     if options[:context].count > 0
       
@@ -87,15 +88,28 @@ class Mouth
     end
     
     if word_data == nil
-      puts "Got no data, query is %s " % query.sub('?',word)
-      return ""
+      puts "SELECT * FROM words WHERE id = (SELECT word_id FROM pairs WHERE pair_id = (SELECT id FROM words WHERE word = %s)" % word
+      return word_data
     end
     
+    question_rate = exclamation_rate = comma_ratio = dot_ratio = 0
+    
     # Calculate the chance of a comma, semicolon, exclamationmark, dot or questionmark trailing this word
-    question_rate = (word_data['question_suffix'].to_i / word_data['occurance'].to_i)*100
-    exclamation_rate = (word_data['exclamation_suffix'].to_i / word_data['occurance'].to_i)*100
-    comma_ratio = (word_data['comma_suffix'].to_i / word_data['occurance'].to_i)*100
-    dot_ratio = (word_data['dot_suffix'].to_i / word_data['occurance'].to_i)*100
+    
+    unless word_data['occurance'].to_i == 0
+      
+      unless word_data['question_suffix'].to_i == 0 or word_data['occurance'].to_i == 0
+        question_rate = (word_data['question_suffix'].to_i / word_data['occurance'].to_i)*100    
+      end  
+      
+      exclamation_rate = (word_data['exclamation_suffix'].to_i / word_data['occurance'].to_i)*100 unless word_data['exclamation_suffix'] == 0
+      comma_ratio = (word_data['comma_suffix'].to_i / word_data['occurance'].to_i)*100 unless word_data['comma_suffix'] == 0
+      dot_ratio = (word_data['dot_suffix'].to_i / word_data['occurance'].to_i)*100 unless word_data['dot_suffix'] == 0
+    end
+    
+    
+    
+   
     
     next_word = word_data['word']
     
@@ -124,7 +138,8 @@ class Mouth
   # @return string
   #
   def construct_sentence(msg)
-
+    
+    e = Eye.new
     context = []
     
     # Check if we were provided with multiple words or just one
@@ -132,7 +147,7 @@ class Mouth
       word = msg.split(/\s+/)
       
       if word.count > 2
-        context = Eye::get_context(msg)
+        context = e.get_context(msg)
        
         if context.empty?
           sentence = word.last
@@ -148,6 +163,13 @@ class Mouth
     elsif msg == nil or msg.empty?
       prev_word = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")
       sentence = prev_word
+      
+      
+      @previously_said.each do |p|
+        context.zip(e.get_context(p)).flatten!
+      end unless @previously_said.empty?
+      
+      context.uniq
     else
       sentence = msg
       prev_word = msg
@@ -155,6 +177,7 @@ class Mouth
     
     first_word = sentence
     i = 0
+    
     
     # Loop with a 1 in 25 chance of ending to construct a randomly sized sentence
     begin  
@@ -184,7 +207,11 @@ class Mouth
     
     # Capitalize our sentence, of course (:
     sentence.capitalize!
+    if @previously_said.count > 5
+      @previously_said.shift  
+    end
     
+    @previously_said << sentence
     return sentence
   end
   

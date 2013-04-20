@@ -1,7 +1,13 @@
 require "sqlite3"
+require "mechanize"
+require "wikipedia"
+require "wikicloth"
+require "rubygems"
+require "json"
+require "nokogiri"
 
 class Eye
-  attr_accessor :debug, :db, :determiners, :exempt
+  attr_accessor :debug, :db, :determiners, :exempt, :add_words, :add_noun, :add_context, :add_pair
   debug = true
   
   def initialize(*args)
@@ -23,6 +29,13 @@ class Eye
     # And these words should be exempt -- as in, if any of these comes after any of the above, it's not a match                 
     @exempt = ["i","this", "that", "are", "is", "should", "of", "off", "one", "they", "them", "it", "he", "she", "those", "there", "than", "any", "do", "does", "did", "doesnt", "doesn't", "didn't", "didnt", "will", "be", "been", "has", "have", "dont"]
     
+    # Prepare the database statements we use the most:
+    @add_words = @db.prepare("INSERT OR IGNORE INTO words VALUES (NULL, ?), (NULL, ?);")
+    @add_noun = @db.prepare("INSERT OR IGNORE INTO nouns (id, noun) VALUES (NULL, ?);")
+    @add_context = @db.prepare("INSERT OR IGNORE INTO context (id,noun_id, pair_identifier) VALUES ((SELECT id FROM context WHERE noun_id = (SELECT id FROM nouns WHERE noun = ?) AND pair_identifier = (SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))), (SELECT id FROM nouns WHERE noun = ?),(SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?)));")     
+    @add_pair = @db.prepare("INSERT OR REPLACE INTO pairs (id, word_id, pair_id, occurance, comma_suffix, dot_suffix, question_suffix, exclamation_suffix) VALUES ((SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?)), (SELECT id FROM words WHERE word = ?), (SELECT id FROM words WHERE word = ?),?,?,?,?,?);")
+
+    
     # If our tables dont exist, lets set them up :)
     create_structure
     
@@ -36,7 +49,7 @@ class Eye
     @db.execute("create table if not exists words (id INTEGER PRIMARY KEY, word varchar(50) UNIQUE NOT NULL);")
     
     # Create the wordpair table
-    @db.execute("create table if not exists pairs (id INTEGER PRIMARY KEY, word_id INTEGER(8), pair_id INTEGER(8), occurance INTEGER(10), question_suffix INTEGER, comma_suffix INTEGER, dot_suffix INTEGER, exclamation_suffix INTEGER);")
+    @db.execute("create table if not exists pairs (id INTEGER PRIMARY KEY, word_id INTEGER(8), pair_id INTEGER(8), occurance INTEGER(10) DEFAULT 1 NOT NULL, question_suffix INTEGER DEFAULT 0 NOT NULL, comma_suffix INTEGER DEFAULT 0 NOT NULL, dot_suffix INTEGER DEFAULT 0 NOT NULL, exclamation_suffix INTEGER DEFAULT 0 NOT NULL);")
     
     # Create the nouns table (for context)
     @db.execute("create table if not exists nouns (id INTEGER PRIMARY KEY, noun VARCHAR(50) UNIQUE NOT NULL);")
@@ -74,7 +87,12 @@ class Eye
     i = -1
     
     # First word shouldn't have a trailing special char (remember, it's the PAIR that has a suffix, not each word!)
-    word1 = word1.sub(/\W/)
+    word1 = word1.sub(/\W/,'')
+    
+    question_mark = 0
+    comma = 0
+    period = 0
+    exclamation_mark = 0
     
     # Check our second word for special characters, increment our values in the database, and strip them away
     # Only check these if we know there's a special character
@@ -84,47 +102,51 @@ class Eye
       # First check if its a question
       if word2 =~ /.+(\?)/
         question_mark = 1
-        word2 = word.sub /.+(\?)/, ''
       # if not, check if there's an exclamationmark
-      elsif word =~ /.+(!)/
+      elsif word2 =~ /.+(!)/
         exclamation_mark = 1
-        word2 = word.sub /.+(!)/, ''
       # no semicolon? Check for a dot!
-      elsif word =~ /.+(\.)/
+      elsif word2 =~ /.+(\.)/
         period = 1
-        word2 = word.sub /.+(\.)/, ''
       # Final try, check for a comma (most common)
-      elsif word =~ /.+([;|:])/
+      elsif word2 =~ /.+([;|:])/
         comma = 1
-        word2 = word.sub /.+([;|:])/, ''
+      end
+      
+      if word2 !~ /https?:\/\/[\S]+/
+        word2 = word2.sub(/\W/,'')
       end
     end
     
+ 
     # The first thing we need to do is add our words if they dont exist:
-    query = "INSERT OR IGNORE INTO words VALUES (NULL, ?), (NULL, ?);"
+    get_pair_data = "SELECT * FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?) LIMIT 1;"
     
-    puts "I have %s contexts to iterate through after adding vanilla pair" % options[:context].count
+    # Add our words if they dont exist, using our prepared statement
+    @add_words.execute(word1,word2)
+    
+    puts "I have %s contexts to iterate through after adding vanilla pair of #{word1} and #{word2}" % options[:context].count
     
     begin
-      
+      puts "ITERATION #{i}"
       # First thing we need to do is insert our pair if it doesnt exist, without context, and update it if it already exists (+1 on comma/questionmark/etc if one is included)
-      if i < 0      
-        query << "INSERT OR REPLACE INTO pairs (id, word_id, pair_id, occurance, comma_suffix, dot_suffix, question_suffix, exclamation_suffix) VALUES "
-        query << "((SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?)),"
-        query << "(SELECT id FROM words WHERE word = ?), (SELECT id FROM words WHERE word = ?),"
-        query << "(SELECT occurance FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))+1,"
-        query << "(SELECT comma_suffix FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))+?,"
-        query << "(SELECT dot_suffix FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))+?,"
-        query << "(SELECT question_suffix FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))+?,"
-        query << "(SELECT exclamation_suffix FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))+?);"
-        @db.execute(query,word1,word2,word1,word2,word1,word2,word1,word2,word1,word2,comma,word1,word2,period,word1,word2,question_mark,word1,word2,exclamation_mark)
-      
+      if i < 0
+        
+        # Get previous data for this pair
+        r = @db.get_first_row(get_pair_data,word1,word2)
+        
+        unless r == nil
+          comma += r['comma_suffix'].to_i
+          period += r['period_suffix'].to_i
+          question_mark += r['question_suffix'].to_i
+          exclamation_mark += r['exclamation_suffix'].to_i
+        end      
+       
+        @add_pair.execute(word1,word2,word1,word2,comma,period,question_mark,exclamation_mark)
+        
       # Afterwards, we need to add each context noun to our noun table, and link it to the created pair
       else
-        query = "INSERT OR IGNORE INTO nouns (id, noun) VALUES (NULL, ?);"
-        query << "INSERT OR IGNORE INTO context (id,noun_id, pair_identifier) VALUES ((SELECT id FROM context WHERE noun_id = (SELECT id FROM nouns WHERE noun = ?) AND pair_id = (SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))),"
-        query << "(SELECT id FROM nouns WHERE noun = ?),(SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?)));"
-        @db.execute(query,options[:context][i],options[:context][i],word1,word2,options[:context][i],word1,word2)  
+        @add_context.execute(options[:context][i],word1,word2,options[:context][i],word1,word2)  
       end
       
       i += 1
@@ -183,13 +205,58 @@ class Eye
       
       matches.each do |match|
         unless @exempt.include? match.first or @determiners.include? match.first
-          nouns << match.first
-          puts "Added %s" % match.first
+          nouns << match.first.downcase
+          @add_noun.execute(match.first)
+          puts "Added %s" % match.first.downcase
         end
       end
     end
     nouns = nouns.uniq
     return nouns
+  end
+  
+  #
+  # Searches wikipedia and gets the best match, then processes data and learns from it,
+  # Returns a neat, summarized string of data from wikipedia
+  #
+  # @param string search
+  #
+  def get_wiki(search)
+    
+    search = search.split(/\s+/).map {|w| w.capitalize }.join(' ')
+    page = Wikipedia.find(search)
+    g = JSON.parse(page.json)
+    content = g["query"]["pages"].first.last["revisions"].first
+
+    
+    content = content["*"]
+    
+    
+    wiki = WikiCloth::Parser.new({ data: content })
+    
+    html = wiki.to_html
+    
+    doc = Nokogiri::HTML(html)
+    doc = doc.xpath("//p").to_s
+    doc = Nokogiri::HTML(doc)
+    doc = doc.xpath("//text()").to_s
+    
+    doc = doc.split("\n")
+    
+    plaintext = []
+    
+    doc.each do |d|
+      unless d.empty?
+        plaintext << d
+      end
+    end
+    
+    unless plaintext.empty?
+      p = plaintext.join(" ").gsub(/(\W\d+\W)/,"")
+      process_message(p)
+    end
+   
+    return plaintext
   end
   
 end

@@ -34,16 +34,8 @@ class Mouth
   # @param hash options
   #
   def get_word(word, options = { direction: :forward, context: [] })
-   
-    
-    
-    # If we're looking for the next word rather than the previous, find it by pair_id, else by word_id
-    if options[:direction] == :forward
-      query = "SELECT * FROM words WHERE id = (SELECT word_id FROM pairs WHERE pair_id = (SELECT id FROM words WHERE word = ?)"
-    else
-      query = "SELECT * FROM words WHERE id = (SELECT pair_id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?)"
-    end
-    
+  
+    word_data = nil
     
     # If we specified context, as in when replying to something, we need to add some stuff to our query
     if options[:context].count > 0
@@ -51,39 +43,52 @@ class Mouth
       if @debug == true
         puts "We have %s contexts values" % options[:context].count
       end
+      comma_separated_ids = comma_separated_ids.join(',')
+      
       # We want Context IDs for all context nouns we just got, so make them 'noun1','noun2', etc
-      appendage = options[:context].join("','")
-      q = "SELECT id FROM nouns WHERE noun IN ('%s')" % appendage
-      rows = @db.execute(q)
-      
-      # Populate this one with all our context IDs we just fetched
-      context_ids = []
-      
-      rows.each do |r|
-        context_ids << r['id']   
+      context_check = options[:context].join("','")
+      query = "SELECT id FROM nouns WHERE noun IN ('%s')" % context_check
+    
+      context_ids = @db.execute(query)
+      comma_separated_ids = []
+    
+      context_ids.each do |i|
+        comma_separated_ids << i['id']
       end
       
-      # and append to our query that we only want wordpairs that's in this kind of context...
-      context_query = query + " AND context IN (%s)" % ids.join(",")
-      context_query << " ORDER BY RANDOM() LIMIT 1);"
+      # aaaand create our query -- we can get the next or the previous word by specifying direction!
+      if options[:direction] == :forward
+        query = "SELECT * FROM words INNER JOIN context as c ON (pair_id = c.pair_identifier) WHERE c.noun_id IN (%s)" % comma_separated_ids
+        query << "AND words.id = (SELECT pair_id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?)) ORDER BY RANDOM() LIMIT 1;"
+      else
+        query = "SELECT * FROM words INNER JOIN context as c ON (pair_id = c.pair_identifier) WHERE c.noun_id IN (%s)" % comma_separated_ids
+        query << "AND words.id = (SELECT word_id FROM pairs WHERE pair_id = (SELECT id FROM words WHERE word = ?)) ORDER BY RANDOM() LIMIT 1;"
+      end
       
       # Get the randomly selected row
-      word_data = @db.get_first_row(context_query)
+      word_data = @db.get_first_row(query,word)
       
       # If we didnt get any results with context, perform a normal wordpair match
       if word_data == nil or word_data.empty?
         query << " ORDER BY RANDOM() LIMIT 1);"
         word_data = @db.get_first_row(query, word)
       end
+    end
+    
     # Normal wordpair match:
-    else
+    if word_data == nil
+      if options[:direction] == :forward
+        query = "SELECT * FROM words WHERE id = (SELECT pair_id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?)"
+      else
+        query = "SELECT * FROM words WHERE id = (SELECT word_id FROM pairs WHERE pair_id = (SELECT id FROM words WHERE word = ?)"
+      end
       query << " ORDER BY RANDOM() LIMIT 1);"
       word_data = @db.get_first_row(query, word)  
     end
     
     if word_data == nil
       puts "Got no data, query is %s " % query.sub('?',word)
-      return nil
+      return ""
     end
     
     # Calculate the chance of a comma, semicolon, exclamationmark, dot or questionmark trailing this word
@@ -134,7 +139,7 @@ class Mouth
           prev_word = sentence
         else
           sentence = context.at(Random.rand(context.count))
-          prev_word = sentence         
+          prev_word = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")     
         end
       else
         sentence = word.last  

@@ -33,87 +33,32 @@ class Eye
   #
   def create_structure
     # Create the words table
-    @db.execute("create table if not exists words (id INTEGER PRIMARY KEY, word varchar(50) UNIQUE NOT NULL, occurance INTEGER(10), question_suffix INTEGER, comma_suffix INTEGER, dot_suffix INTEGER, exclamation_suffix INTEGER);")
+    @db.execute("create table if not exists words (id INTEGER PRIMARY KEY, word varchar(50) UNIQUE NOT NULL);")
     
     # Create the wordpair table
-    @db.execute("create table if not exists pairs (id INTEGER PRIMARY KEY, word_id INTEGER(8), pair_id INTEGER(8), occurance INTEGER(10), context INTEGER);")
-    
+    @db.execute("create table if not exists pairs (id INTEGER PRIMARY KEY, word_id INTEGER(8), pair_id INTEGER(8), occurance INTEGER(10), question_suffix INTEGER, comma_suffix INTEGER, dot_suffix INTEGER, exclamation_suffix INTEGER);")
     
     # Create the nouns table (for context)
     @db.execute("create table if not exists nouns (id INTEGER PRIMARY KEY, noun VARCHAR(50) UNIQUE NOT NULL);")
+    
+    # Create table linking nouns and pairs
+    @db.execute("create table if not exists context (id INTEGER PRIMARY KEY, noun_id INTEGER, pair_identifier INTEGER);")
     
     if @debug == true
       puts "Should have created tables by now"
     end
     
-  end
-  
-  # 
-  # Adds a new word to the database if it doesn't already exist
-  # Checks every word for periods, questionmarks, exclamation marks,
-  # commas, and semicolons and removes it.
-  # Returns the ID of the newly added word 
-  # 
-  # @param string word
-  # @return string
-  #
-  def add_word(word)
-    
-    question_mark = 0
-    exclamation_mark = 0
-    period = 0
-    comma = 0
-    
-    # Only check these if we know there's a special character
-    # in our string!
-    
-    if word =~ /\W$/
-    
-      # First check if its a question
-      if word =~ /.+(\?)/
-        question_mark = 1
-        word = word.sub /.+(\?)/, ''
-      # if not, check if there's an exclamationmark
-      elsif word =~ /.+(!)/
-        exclamation_mark = 1
-        word = word.sub /.+(!)/, ''
-      # no semicolon? Check for a dot!
-      elsif word =~ /.+(\.)/
-        period = 1
-        word = word.sub /.+(\.)/, ''
-      # Final try, check for a comma (most common)
-      elsif word =~ /.+([;|:])/
-        comma = 1
-        word = word.sub /.+([;|:])/, ''
-      end
-    end
-    
-   
-    
-    id = @db.get_first_value("SELECT id FROM words WHERE word = ?",word)
-    
-    if id == nil or id <= 0
-      @db.execute("INSERT OR IGNORE INTO words VALUES (NULL, ?, 1, ?, ?, ?, ?)", word, question_mark, comma, period, exclamation_mark)
-      id = @db.get_first_value("SELECT id FROM words WHERE word = ?",word)
-      
-      if @debug == true
-        puts "I added #{word} to our dictionary with id #{id}"
-      end
-    else
-      @db.execute("UPDATE words SET occurance = occurance+1, question_suffix = question_suffix + ?, comma_suffix = comma_suffix + ?, dot_suffix = dot_suffix + ?, exclamation_suffix = exclamation_suffix + ? WHERE id = ?",question_mark, comma, period, exclamation_mark,id)  
-      
-      if @debug == true
-        puts "I incremented comma (#{comma}), exclamation (#{exclamation_mark}), question (#{question_mark}) and dot (#{period}) for #{word} with id #{id}"
-      end
-    end
-    
-    return id 
-  end
-  
+  end  
   
   #
   # Pair two words to one another with or without context,
   # and returns an array of the pair IDs that were created.
+  # If words don't exist in database, they will be added.
+  # Special characters will be stripped away, and trailing
+  # non-word characters on word2 will increment appropriate columns
+  # in the database, to allow for calculation of chance such characters
+  # will trail the wordpair in the future
+  #
   #
   # Options:
   # =>  context: an array of nouns
@@ -127,97 +72,64 @@ class Eye
     # Loop through all nouns in context array (if any)
     # and add a normal pair by default as well
     i = -1
-    pairs = []
-    word1_id = add_word(word1)
-    word2_id = add_word(word2)
     
-    word1 = word1.sub(/\W/,'')
-    word2 = word2.sub(/\W/,'')
+    # First word shouldn't have a trailing special char (remember, it's the PAIR that has a suffix, not each word!)
+    word1 = word1.sub(/\W/)
+    
+    # Check our second word for special characters, increment our values in the database, and strip them away
+    # Only check these if we know there's a special character
+    # in our string!
+    if word2 =~ /\W$/
+    
+      # First check if its a question
+      if word2 =~ /.+(\?)/
+        question_mark = 1
+        word2 = word.sub /.+(\?)/, ''
+      # if not, check if there's an exclamationmark
+      elsif word =~ /.+(!)/
+        exclamation_mark = 1
+        word2 = word.sub /.+(!)/, ''
+      # no semicolon? Check for a dot!
+      elsif word =~ /.+(\.)/
+        period = 1
+        word2 = word.sub /.+(\.)/, ''
+      # Final try, check for a comma (most common)
+      elsif word =~ /.+([;|:])/
+        comma = 1
+        word2 = word.sub /.+([;|:])/, ''
+      end
+    end
+    
+    # The first thing we need to do is add our words if they dont exist:
+    query = "INSERT OR IGNORE INTO words VALUES (NULL, ?), (NULL, ?);"
     
     puts "I have %s contexts to iterate through after adding vanilla pair" % options[:context].count
     
     begin
       
+      # First thing we need to do is insert our pair if it doesnt exist, without context, and update it if it already exists (+1 on comma/questionmark/etc if one is included)
       if i < 0      
-        count = @db.get_first_value("SELECT count(*) as c FROM pairs WHERE word_id = ? AND pair_id = ? AND context = 0", word1, word2)
+        query << "INSERT OR REPLACE INTO pairs (id, word_id, pair_id, occurance, comma_suffix, dot_suffix, question_suffix, exclamation_suffix) VALUES "
+        query << "((SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?)),"
+        query << "(SELECT id FROM words WHERE word = ?), (SELECT id FROM words WHERE word = ?),"
+        query << "(SELECT occurance FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))+1,"
+        query << "(SELECT comma_suffix FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))+?,"
+        query << "(SELECT dot_suffix FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))+?,"
+        query << "(SELECT question_suffix FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))+?,"
+        query << "(SELECT exclamation_suffix FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))+?);"
+        @db.execute(query,word1,word2,word1,word2,word1,word2,word1,word2,word1,word2,comma,word1,word2,period,word1,word2,question_mark,word1,word2,exclamation_mark)
+      
+      # Afterwards, we need to add each context noun to our noun table, and link it to the created pair
       else
-        count = @db.get_first_value("SELECT count(*) as c FROM pairs WHERE word_id = ? AND pair_id = ? AND context = (SELECT id FROM nouns WHERE noun = ?);",word1_id, word2_id, options[:context][i])
+        query = "INSERT OR IGNORE INTO nouns (id, noun) VALUES (NULL, ?);"
+        query << "INSERT OR IGNORE INTO context (id,noun_id, pair_identifier) VALUES ((SELECT id FROM context WHERE noun_id = (SELECT id FROM nouns WHERE noun = ?) AND pair_id = (SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))),"
+        query << "(SELECT id FROM nouns WHERE noun = ?),(SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?)));"
+        @db.execute(query,options[:context][i],options[:context][i],word1,word2,options[:context][i],word1,word2)  
       end
       
-      # If nothing is in there, add it
-      if count == nil or count <= 0
-        
-        # Do the actual adding (depending on whether we're at contexts or regular)
-        if i < 0
-          @db.execute("INSERT INTO pairs VALUES (NULL,?,?,1,0)", word1_id, word2_id)
-        
-          # Get the ID for the pair we created and throw it onto our pairs array
-          tmpid = @db.get_first_value("SELECT id FROM pairs WHERE word_id = ? AND pair_id = ?", word1_id, word2_id)
-          
-          unless tmpid == nil or tmpid == ""
-            pairs << tmpid
-          end
-          
-          if @debug == true
-            puts "I've just paired #{word1} to #{word2} :D"
-          end
-          
-        # Add with context:
-        else
-          @db.execute("INSERT INTO pairs VALUES (NULL,?,?,1,(SELECT id FROM nouns WHERE id = ?))", word1_id, word2_id, options[:context][i])
-        
-          # Get the ID for the pair we created and throw it onto our pairs array
-          tmpid = @db.get_first_value("SELECT id FROM pairs WHERE word_id = ? AND pair_id = ? AND context = (SELECT id FROM nouns WHERE id = ?)", word1_id, word2_id, options[:context][i])
-          
-          unless tmpid == nil or tmpid.empty?
-            pairs << tmpid
-          end
-          
-          if @debug == true
-            puts "I've just paired #{word1} to #{word2} with context %s" % options[:context][i]
-          end
-        end
-    
-      # If something is there, update occurance by 1  
-      else
-        
-        # Update occurance for wordpair without context
-        if i < 0
-          @db.execute("UPDATE pairs SET occurance = occurance+1 WHERE word_id = ? AND pair_id = ?", word1_id, word2_id)
-          
-          # Get the ID for the pair we created and throw it onto our pairs array
-          tmpid = @db.get_first_value("SELECT id FROM pairs WHERE word_id = ? AND pair_id = ?", word1_id, word2_id)
-          
-          unless tmpid == nil or tmpid.empty?
-            pairs << tmpid
-          end
-          
-          # Output some debug information if debug is enabled
-          if @debug == true
-            occurance = @db.get_first_value("SELECT occurance FROM pairs WHERE word_id = ? AND pair_id = ?", word1_id, word2_id)
-            puts "I updated the occurance of #{word1} to #{word2} , which is now: #{occurance}"
-          end
-        else
-          @db.execute("UPDATE pairs SET occurance = occurance+1 WHERE word_id = ? AND pair_id = ? AND context = (SELECT id FROM nouns WHERE noun = ?)", word1_id, word2_id, options[:context][i])
-          
-          # Get the ID for the pair we created and throw it onto our pairs array
-          tmpid =  @db.get_first_value("SELECT id FROM pairs WHERE word_id = ? AND pair_id = ? AND context = (SELECT id FROM nouns WHERE id = ?)", word1_id, word2_id, options[:context][i])
-          
-          unless tmpid == nil or tmpid.empty?
-            pairs += [tmpid]
-          end
-           
-          if @debug == true
-            occurance = @db.get_first_value("SELECT occurance FROM pairs WHERE word_id = ? AND pair_id = ? AND context = (SELECT id FROM nouns WHERE noun = ?)", word1_id, word2_id, options[:context][i])
-            puts "I updated the occurance of #{word1} to #{word2} , which is now: #{occurance}"
-          end
-          
-        end
-      end
       i += 1
     end while i < options[:context].count
     
-    return pairs
   end
   
   
@@ -271,7 +183,6 @@ class Eye
       
       matches.each do |match|
         unless @exempt.include? match.first or @determiners.include? match.first
-          @db.execute("INSERT OR IGNORE INTO nouns VALUES (NULL, ?)",match)  
           nouns << match.first
           puts "Added %s" % match.first
         end

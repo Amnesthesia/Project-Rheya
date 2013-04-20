@@ -183,7 +183,7 @@ class Eye
       # so instead we pair each word after the first to the previous word
       if i > 0
        
-        pair_words(word,words[i-1],{ context: nouns })
+        pair_words(words[i-1],word,{ context: nouns })
         puts "CALL # #{i}"
       end
     end

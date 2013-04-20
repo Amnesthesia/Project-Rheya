@@ -135,7 +135,7 @@ bot = Cinch::Bot.new do
   configure do |conf|
   
     # Set up personality
-    conf.nick = "Inara"
+    conf.nick = "Rheya"
     conf.user = "Rheya"
     conf.realname = "Rheya"
     

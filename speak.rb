@@ -1,7 +1,7 @@
 require "twitter"
 require "sqlite3"
 require "arrayfields"
-require "see.rb"
+require "./see.rb"
 
     
 class Mouth
@@ -35,6 +35,8 @@ class Mouth
   #
   def get_word(word, options = { direction: :forward, context: [] })
    
+    
+    
     # If we're looking for the next word rather than the previous, find it by pair_id, else by word_id
     if options[:direction] == :forward
       query = "SELECT * FROM words WHERE id = (SELECT word_id FROM pairs WHERE pair_id = (SELECT id FROM words WHERE word = ?)"
@@ -46,6 +48,9 @@ class Mouth
     # If we specified context, as in when replying to something, we need to add some stuff to our query
     if options[:context].count > 0
       
+      if @debug == true
+        puts "We have %s contexts values" % options[:context].count
+      end
       # We want Context IDs for all context nouns we just got, so make them 'noun1','noun2', etc
       appendage = options[:context].join("','")
       q = "SELECT id FROM nouns WHERE noun IN ('%s')" % appendage
@@ -55,25 +60,30 @@ class Mouth
       context_ids = []
       
       rows.each do |r|
-        context_ids += r['id']   
+        context_ids << r['id']   
       end
       
       # and append to our query that we only want wordpairs that's in this kind of context...
       context_query = query + " AND context IN (%s)" % ids.join(",")
-      context_query += " ORDER BY RANDOM() LIMIT 1)"
+      context_query << " ORDER BY RANDOM() LIMIT 1);"
       
       # Get the randomly selected row
       word_data = @db.get_first_row(context_query)
       
       # If we didnt get any results with context, perform a normal wordpair match
       if word_data == nil or word_data.empty?
-        query += " ORDER BY RANDOM() LIMIT 1)"
+        query << " ORDER BY RANDOM() LIMIT 1);"
         word_data = @db.get_first_row(query, word)
       end
     # Normal wordpair match:
     else
-      query += " ORDER BY RANDOM() LIMIT 1)"
+      query << " ORDER BY RANDOM() LIMIT 1);"
       word_data = @db.get_first_row(query, word)  
+    end
+    
+    if word_data == nil
+      puts "Got no data, query is %s " % query.sub('?',word)
+      return nil
     end
     
     # Calculate the chance of a comma, semicolon, exclamationmark, dot or questionmark trailing this word
@@ -81,6 +91,8 @@ class Mouth
     exclamation_rate = (word_data['exclamation_suffix'].to_i / word_data['occurance'].to_i)*100
     comma_ratio = (word_data['comma_suffix'].to_i / word_data['occurance'].to_i)*100
     dot_ratio = (word_data['dot_suffix'].to_i / word_data['occurance'].to_i)*100
+    
+    next_word = word_data['word']
     
     if Random.rand(100) < question_rate
       next_word << "?"
@@ -159,11 +171,11 @@ class Mouth
       end
       
       # Append a randomly chosen word based to our semi-constructed sentence
-      sentence << " " << prev_word
+      sentence << " " << prev_word unless prev_word == nil
       puts " added %s" %prev_word
       i += 1
       
-    end while (prev_word !~ /^\w+([\?\.!])/)
+    end while (prev_word !~ /^\w+([\?\.!])/) and prev_word != nil
     
     # Capitalize our sentence, of course (:
     sentence.capitalize!

@@ -1,3 +1,5 @@
+require "sqlite3"
+
 class Ear
   
   attr_accessor :debug, :db

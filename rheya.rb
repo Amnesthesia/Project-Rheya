@@ -1,6 +1,6 @@
-require "see.rb"
-require "listen.rb"
-require "speak.rb"
+require "./see.rb"
+require "./listen.rb"
+require "./speak.rb"
 
 #
 # This whole class is just a wrapper class linking 

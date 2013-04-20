@@ -58,7 +58,7 @@ class RheyaIRC
     msg.reply @rheya.speak(strip_command(msg.message))
   end
   
-  def marvkov(msg)
+  def markov(msg)
     msg.reply @rheya.markov(strip_command(msg.message))
   end
   

@@ -32,7 +32,7 @@ class Eye
     create_structure
     
     # Prepare the database statements we use the most:
-    @add_words = @db.prepare("INSERT OR IGNORE INTO words VALUES (NULL, ?); INSERT OR IGNORE INTO words VALUES (NULL, ?);")
+    @add_words = @db.prepare("INSERT OR IGNORE INTO words VALUES (NULL, ?);")
     @add_noun = @db.prepare("INSERT OR IGNORE INTO nouns (id, noun) VALUES (NULL, ?);")
     @add_context = @db.prepare("INSERT OR IGNORE INTO context (id,noun_id, pair_identifier) VALUES ((SELECT id FROM context WHERE noun_id = (SELECT id FROM nouns WHERE noun = ?) AND pair_identifier = (SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))), (SELECT id FROM nouns WHERE noun = ?),(SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?)));")     
     @add_pair = @db.prepare("INSERT OR REPLACE INTO pairs (id, word_id, pair_id, occurance, comma_suffix, dot_suffix, question_suffix, exclamation_suffix) VALUES ((SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?)), (SELECT id FROM words WHERE word = ?), (SELECT id FROM words WHERE word = ?),?,?,?,?,?);")
@@ -121,7 +121,8 @@ class Eye
     get_pair_data = "SELECT * FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?) LIMIT 1;"
     
     # Add our words if they dont exist, using our prepared statement
-    @add_words.execute(word1,word2)
+    @add_words.execute(word1)
+    @add_words.execute(word2)
     
     puts "I have %s contexts to iterate through after adding vanilla pair of #{word1} and #{word2}" % options[:context].count
     

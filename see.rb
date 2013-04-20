@@ -87,7 +87,7 @@ class Eye
     i = -1
     
     # First word shouldn't have a trailing special char (remember, it's the PAIR that has a suffix, not each word!)
-    word1 = word1.sub(/\W/,'')
+    word1 = word1.gsub(/\W/,'')
     
     question_mark = 0
     comma = 0
@@ -114,7 +114,7 @@ class Eye
       end
       
       if word2 !~ /https?:\/\/[\S]+/
-        word2 = word2.sub(/\W/,'')
+        word2 = word2.gsub(/\W/,'')
       end
     end
     
@@ -168,7 +168,7 @@ class Eye
     # Make sure its a string (cause we can pass anything here!)
     msg = message.to_s
     
-    msg = msg.sub(/\s+\W\s+/,'')
+    msg = msg.sub(/\b*\s+\W\s+\b*/,'')
     
     nouns = get_context(message)
     
@@ -251,10 +251,6 @@ class Eye
       end
     end
     
-    unless plaintext.empty?
-      p = plaintext.join(" ").gsub(/(\W\d+\W)/,"")
-      process_message(p)
-    end
    
     return plaintext
   end

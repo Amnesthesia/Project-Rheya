@@ -38,6 +38,14 @@ class Rheya
   end
   
   #
+  # Regular markov speech
+  #
+  # @param msg
+  #
+  def markov(msg)
+    return @mouth.markov_speak(msg)
+  end
+  #
   # Remembers something and lets it be randomized by recall
   # 
   # @param string message

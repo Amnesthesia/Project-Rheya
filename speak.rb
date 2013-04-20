@@ -44,7 +44,7 @@ class Mouth
       if @debug == true
         puts "We have %s contexts values" % options[:context].count
       end
-      comma_separated_ids = comma_separated_ids.join(',')
+      
       
       # We want Context IDs for all context nouns we just got, so make them 'noun1','noun2', etc
       context_check = options[:context].join("','")
@@ -56,14 +56,14 @@ class Mouth
       context_ids.each do |i|
         comma_separated_ids << i['id']
       end
-      
+      comma_separated_ids = comma_separated_ids.join(',')
       # aaaand create our query -- we can get the next or the previous word by specifying direction!
-      if options[:direction] == :forward
-        query = "SELECT * FROM words INNER JOIN context as c ON (pair_id = c.pair_identifier) WHERE c.noun_id IN (%s)" % comma_separated_ids
-        query << "AND words.id = (SELECT pair_id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?)) ORDER BY RANDOM() LIMIT 1;"
+      if options[:direction] != :forward
+        query = "SELECT * FROM words as next JOIN pairs as p ON (current.id = p.word_id) INNER JOIN context ON (context.pair_identifier = p.id)" 
+        query << "INNER JOIN words as current ON (p.pair_id = next.id) WHERE context.noun_id IN (%s) AND current.id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1;" % comma_separated_ids
       else
-        query = "SELECT * FROM words INNER JOIN context as c ON (pair_id = c.pair_identifier) WHERE c.noun_id IN (%s)" % comma_separated_ids
-        query << "AND words.id = (SELECT word_id FROM pairs WHERE pair_id = (SELECT id FROM words WHERE word = ?)) ORDER BY RANDOM() LIMIT 1;"
+        query = "SELECT * FROM words as current JOIN pairs as p ON (current.id = p.word_id) INNER JOIN context ON (context.pair_identifier = p.id)" 
+        query << "INNER JOIN words as next ON (p.pair_id = next.id) WHERE context.noun_id IN (%s) AND current.id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1;" % comma_separated_ids
       end
       
       # Get the randomly selected row
@@ -79,16 +79,18 @@ class Mouth
     # Normal wordpair match:
     if word_data == nil
       if options[:direction] == :forward
-        query = "SELECT * FROM words WHERE id = (SELECT pair_id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?)"
+        query = "SELECT *, next.word as nword FROM words as current INNER JOIN pairs as p ON (p.word_id = current.id) INNER JOIN words as next ON (p.pair_id = next.id) WHERE current.id = (SELECT id FROM words WHERE word = ?)"
       else
-        query = "SELECT * FROM words WHERE id = (SELECT word_id FROM pairs WHERE pair_id = (SELECT id FROM words WHERE word = ?)"
+        query = "SELECT *, next.word as nword FROM words as next INNER JOIN pairs as p ON (p.word_id = current.id) INNER JOIN words as current ON (p.pair_id = next.id) WHERE current.id = (SELECT id FROM words WHERE word = ?)"
       end
-      query << " ORDER BY RANDOM() LIMIT 1);"
+      query << " ORDER BY RANDOM() LIMIT 1;"
       word_data = @db.get_first_row(query, word)  
+      #puts word_data[0]
+      
     end
     
     if word_data == nil
-      puts "SELECT * FROM words WHERE id = (SELECT word_id FROM pairs WHERE pair_id = (SELECT id FROM words WHERE word = %s)" % word
+      puts "SELECT *, word as nword FROM words WHERE id = (SELECT word_id FROM pairs WHERE pair_id = (SELECT id FROM words WHERE word = %s)" % word
       return word_data
     end
     
@@ -111,7 +113,7 @@ class Mouth
     
    
     
-    next_word = word_data['word']
+    next_word = word_data['nword']
     
     if Random.rand(100) < question_rate
       next_word << "?"
@@ -126,6 +128,42 @@ class Mouth
     return next_word
   end
   
+  #
+  # Regular "markov" wordfetch
+  #
+  # @param string word
+  #  
+  def markov_speak(msg)
+
+    if msg.match(/^\w+\s+\w+.+/)
+      word = msg.split(/\s+/)
+      sentence = word.last  
+      prev_word = word.last
+    elsif msg == nil or msg.empty? or msg == "" or msg.length<1
+      word = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")
+      sentence = word
+      prev_word = word
+    else
+      word = msg
+      sentence = msg
+      prev_word = msg
+    end
+    
+    i = 0
+    
+    # Loop with a 1 in 10 chance of ending to construct a randomly sized sentence
+    begin  
+      prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT pair_id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?)) ORDER BY RANDOM() LIMIT 1;", prev_word)
+      # Append a randomly chosen word based on the previous word in the sentence
+      unless prev_word == nil
+        sentence << " " << prev_word
+        puts " added %s" %prev_word
+      end
+      i += 1
+    end while Random.rand(25) != 8 and prev_word != nil
+    sentence.capitalize!
+    return sentence
+  end
   
   # 
   # Constructs a sentence based on either:

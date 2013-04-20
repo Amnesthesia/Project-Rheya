@@ -20,6 +20,7 @@ class RheyaIRC
   match /^!read\s.+/, {method: :read }
   match /^!wiki\s.+/, {method: :wiki }
   match /^!help.*/, { method: :print_help }
+  match /^!markov.*/, {method: :markov }
   
   timer 600, method: :mentioned
   
@@ -46,11 +47,19 @@ class RheyaIRC
   end
   
   def learn(msg)
-    @rheya.learn(strip_command(msg.message))
+    unless msg.user == "Rheya" or msg.user == "Inara" or msg.user == "River"
+      unless msg.action?
+        @rheya.learn(strip_command(msg.message))
+      end
+    end
   end
   
   def say(msg)
     msg.reply @rheya.speak(strip_command(msg.message))
+  end
+  
+  def marvkov(msg)
+    msg.reply @rheya.markov(strip_command(msg.message))
   end
   
   def remember(msg)
@@ -92,19 +101,24 @@ class RheyaIRC
     message = strip_command(msg.message)
     
     wiki = @rheya.eyes.get_wiki message
-    
+    i = 0
     unless wiki.empty?
-      wiki.each_with_index do |i,w|
-        if i > 1
-          break
+      p = wiki.join(" ").gsub(/(\W\d+\W)/,"").split(/\s+/)
+      p.each do |w|
+        
+        if i < 2
+          message.reply w
         end
-        message.reply w
+        i += 1
+        @rheya.eyes.process_message(w)
       end
     end
   end
   
+  
   def print_help(msg)
     msg.reply "I know the following commands:"
+    msg.reply "  !markov [word] - Default markov ramble"
     msg.reply "  !mentions - Gets the latest tweets meant for meeeeee :D"
     msg.reply "  !recall - I'll tell you a random quote or message if I remember it"
     msg.reply "  !remember <message> - Store a quote or message"

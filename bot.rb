@@ -19,6 +19,7 @@ class RheyaIRC
   match /^!mentions/, { method: :mentioned}
   match /^!read\s.+/, {method: :read }
   match /^!wiki\s.+/, {method: :wiki }
+  match /^!help.*/, { method: :print_help }
   
   timer 600, method: :mentioned
   
@@ -100,6 +101,18 @@ class RheyaIRC
         message.reply w
       end
     end
+  end
+  
+  def print_help(msg)
+    msg.reply "I know the following commands:"
+    msg.reply "  !mentions - Gets the latest tweets meant for meeeeee :D"
+    msg.reply "  !recall - I'll tell you a random quote or message if I remember it"
+    msg.reply "  !remember <message> - Store a quote or message"
+    msg.reply "  !reply <message> - Reply to the last person who tweeted me"
+    msg.reply "  !tweet <message> - Tweet a message from @CodetalkIRC"
+    msg.reply "  !speak [word] - If you give me a word or a long sentence, I'll try to stay on topic. Note: try. Otherwise I'll just ramble."
+    msg.reply "  !wiki <page name> - I'll try to find you the wiki page and give you a summary"
+    msg.reply ""
   end
   
 end

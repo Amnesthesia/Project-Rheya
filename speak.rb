@@ -135,32 +135,55 @@ class Mouth
   #  
   def markov_speak(msg)
 
-    if msg.match(/^\w+\s+\w+.+/)
+    all_words = []
+    
+    if msg.split(/\s+/).count == 2
       word = msg.split(/\s+/)
-      sentence = word.last  
-      prev_word = word.last
+      sentence = word[0] 
+      prev_word = word[1]
+      all_words << sentence
+      all_words << prev_word
+    elsif msg.split(/\s+/).count > 2
+      word = msg.split(/\s+/)
+      rnd = Random.rand((word.count-2))
+      sentence = word.at(rnd)
+      prev_word = word.at(rnd+1)
+      all_words << sentence
+      all_words << prev_word
     elsif msg == nil or msg.empty? or msg == "" or msg.length<1
       word = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")
       sentence = word
       prev_word = word
+      all_words << prev_word
     else
       word = msg
       sentence = msg
       prev_word = msg
+      all_words << prev_word
     end
     
     i = 0
     
+    
     # Loop with a 1 in 10 chance of ending to construct a randomly sized sentence
     begin  
-      prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT pair_id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?)) ORDER BY RANDOM() LIMIT 1;", prev_word)
+      if i==0 and all_words.count > 1
+        prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT third_id FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1);",all_words[0],all_words[1])
+      elsif all_words.count > 1
+        prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT third_id FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1);",all_words[i-1],all_words[i])      
+      end
+      
+      if prev_word == nil or all_words.count < 1
+        prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT pair_id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?)) ORDER BY RANDOM() LIMIT 1;", prev_word)
+      end
+      
       # Append a randomly chosen word based on the previous word in the sentence
       unless prev_word == nil
         sentence << " " << prev_word
         puts " added %s" %prev_word
       end
       i += 1
-    end while Random.rand(25) != 8 and prev_word != nil
+    end while all_words.join(' ').length < 400 and prev_word != nil
     sentence.capitalize!
     return sentence
   end

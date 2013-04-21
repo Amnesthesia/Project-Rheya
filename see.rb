@@ -95,7 +95,7 @@ class Eye
     i = -1
     
     # First word shouldn't have a trailing special char (remember, it's the PAIR that has a suffix, not each word!)
-    word1 = word1.gsub(/\W/,'')
+    word1 = word1.gsub(/([^a-zA-Z'\/\s\d-]+)/,'')
     
     question_mark = 0
     comma = 0
@@ -122,7 +122,7 @@ class Eye
       end
       
       if word2 !~ /https?:\/\/[\S]+/
-        word2 = word2.gsub(/\W/,'')
+        word2 = word2.gsub(/([^a-zA-Z'\/\s\d-]+)/,'')
       end
     end
     
@@ -185,8 +185,8 @@ class Eye
   def tripair_words(word1, word2, word3, options = { context: [] })
     
     # First word shouldn't have a trailing special char (remember, it's the PAIR that has a suffix, not each word!)
-    word1 = word1.gsub(/\W/,'')
-    word2 = word2.gsub(/\W/,'')
+    word1 = word1.gsub(/([^a-zA-Z'\/\s\d-]+)/,'')
+    word2 = word2.gsub(/([^a-zA-Z'\/\s\d-]+)/,'')
     
     question_mark = 0
     comma = 0
@@ -213,7 +213,7 @@ class Eye
       end
       
       if word3 !~ /https?:\/\/[\S]+/
-        word3 = word2.gsub(/\W/,'')
+        word3 = word2.gsub(/([^a-zA-Z'\/\s\d-]+)/,'')
       end
     end
     
@@ -224,7 +224,7 @@ class Eye
     # Add our words if they dont exist, using our prepared statement
     @add_words.execute(word1)
     @add_words.execute(word2)
-    
+    @add_words.execute(word3)
     
         
     # Get previous data for this pair

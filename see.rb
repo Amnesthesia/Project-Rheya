@@ -255,7 +255,16 @@ class Eye
 
     # Make sure its a string (cause we can pass anything here!)
     msg = message.to_s
+    words = msg.split(/\s+/)
+    @emotions.each_with_index do |i,em|
+      index = words.index em
+      unless index == nil
+        has_emotion[index-1] = i
+        words.delete_at(index)
+      end
+    end
     
+    words = words.join(' ')
     msg = msg.sub(/\b*\s+\W\s+\b*/,'')
     
     nouns = get_context(message)
@@ -264,13 +273,6 @@ class Eye
     words = msg.split(/\s+/)
     has_emotion = []
     
-    @emotions.each_with_index do |i,em|
-      index = words.index em
-      unless index == nil
-        has_emotion[index-1] = i
-        words.delete_at(index)
-      end
-    end
     
     # Loop through all words, with the index, to access elements properly
     words.each_with_index do |word,i|

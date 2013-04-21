@@ -173,7 +173,7 @@ class Mouth
         prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT third_id FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1);",all_words[i-1],all_words[i])      
       end
       
-      if prev_word == nil or all_words.count < 1
+      if prev_word == nil or all_words.count < 2
         prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT pair_id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?)) ORDER BY RANDOM() LIMIT 1;", prev_word)
       end
       

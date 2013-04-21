@@ -120,12 +120,14 @@ class Eye
       elsif word2 =~ /.+([;|:])/
         comma = 1
       end
-      
-      if word2 !~ /https?:\/\/[\S]+/
+      if word2 !~ /https?:\/\/[\S]+/ and word2 =~ /\W/
         word2 = word2.gsub(/([^a-zA-Z'\/\s\d-]+)/,'')
       end
     end
     
+    if word2 !~ /https?:\/\/[\S]+/ and word2 =~ /\W/
+      word2 = word2.gsub(/([^a-zA-Z'\/\s\d-]+)/,'')
+    end
  
     # The first thing we need to do is add our words if they dont exist:
     get_pair_data = "SELECT * FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?) LIMIT 1;"
@@ -211,12 +213,14 @@ class Eye
       elsif word3 =~ /.+([;|:])/
         comma = 1
       end
-      
       if word3 !~ /https?:\/\/[\S]+/
-        word3 = word2.gsub(/([^a-zA-Z'\/\s\d-]+)/,'')
+        word3 = word3.gsub(/\W$/,'')
       end
     end
     
+    if word3 !~ /https?:\/\/[\S]+/ and word3 =~ /\W/
+      word3 = word2.gsub(/([^a-zA-Z'\/\s\d-]+)/,'')
+    end
  
     # The first thing we need to do is add our words if they dont exist:
     get_tripair_data = "SELECT * FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) AND third_id = (SELECT id FROM words WHERE word = ?) LIMIT 1;"

@@ -103,16 +103,17 @@ class RheyaIRC
     wiki = @rheya.eyes.get_wiki message
     i = 0
     unless wiki.empty?
-      p = wiki.join(" ").gsub(/(\W\d+\W)/,"").split(/\s+/)
+      p = wiki.join(" ").gsub(/(\W\d+\W)/,"").split(/\n/)
       p.each do |w|
         
         if i < 2
-          message.reply w
+          msg.reply w
         end
         i += 1
         @rheya.eyes.process_message(w)
       end
     end
+    return ""
   end
   
   

@@ -25,9 +25,11 @@ class Eye
                     "other", "overmuch", "own", "quite a few", "said", "several", "some", "some of", 
                     "some old", "such", "sufficient", "that", "the", "these", "various", "whatever", 
                     "which", "whichever", "you", "what is", "what was", "to", "i was", "as"]
+    
+    @emotions = [":D", ":)", "(:", ":C", ":c", "C:", "c:", "=)", "^_^", "^^", ":3", "D:", "><", ">_<", "._.", ";__;", ":O", ":o", "o:", ":p", ":P", ":x", ":X", ":*", "o_o", "O_o", "oO", "o_O", ";)", "(;"]
    
     # And these words should be exempt -- as in, if any of these comes after any of the above, it's not a match                 
-    @exempt = ["i","this", "that", "are", "is", "should", "of", "off", "one", "they", "them", "it", "he", "she", "those", "there", "than", "any", "do", "does", "did", "doesnt", "doesn't", "didn't", "didnt", "will", "be", "been", "has", "have", "dont"]
+    @exempt = ["i","this", "that", "are", "is", "should", "of", "off", "one", "they", "them", "it", "he", "she", "those", "there", "than", "any", "do", "does", "did", "doesnt", "doesn't", "didn't", "didnt", "will", "be", "been", "has", "have", "dont","lot", "bunch", "load"]
     # If our tables dont exist, lets set them up :)
     create_structure
     
@@ -36,7 +38,9 @@ class Eye
     @add_noun = @db.prepare("INSERT OR IGNORE INTO nouns (id, noun) VALUES (NULL, ?);")
     @add_context = @db.prepare("INSERT OR IGNORE INTO context (id,noun_id, pair_identifier) VALUES ((SELECT id FROM context WHERE noun_id = (SELECT id FROM nouns WHERE noun = ?) AND pair_identifier = (SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))), (SELECT id FROM nouns WHERE noun = ?),(SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?)));")     
     @add_pair = @db.prepare("INSERT OR REPLACE INTO pairs (id, word_id, pair_id, occurance, comma_suffix, dot_suffix, question_suffix, exclamation_suffix) VALUES ((SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?)), (SELECT id FROM words WHERE word = ?), (SELECT id FROM words WHERE word = ?),?,?,?,?,?);")
-    
+    @add_tripair = @db.prepare("INSERT OR REPLACE INTO tripairs (id, first_id, second_id, third_id, occurance, comma_suffix, dot_suffix, question_suffix, exclamation_suffix) VALUES ((SELECT id FROM tripairs WHERE first_id = ? AND second_id = ? AND third_id = ?), (SELECT id FROM words WHERE word = ? ), (SELECT id FROM words WHERE word = ?), (SELECT id FROM words WHERE word = ?), ?,?,?,?,?)")
+    @pair_emotion = @db.prepare("INSERT OR REPLACE INTO pair_emotions (id, pair_id, emotion_index, tripair) VALUES ((SELECT id FROM pair_emotions WHERE pair_id = (SELECT id FROM pairs ORDER BY id DESC LIMIT 1) AND emotion_index = ? AND tripair = 0), (SELECT id FROM pairs ORDER BY id DESC LIMIT 1), ?, 0);")
+    @tripair_emotion = @db.prepare("INSERT OR REPLACE INTO pair_emotions (id, pair_id, emotion_index, tripair) VALUES ((SELECT id FROM pair_emotions WHERE pair_id = (SELECT id FROM tripairs ORDER BY id DESC LIMIT 1) AND emotion_index = ? AND tripair = 1), (SELECT id FROM tripairs ORDER BY id DESC LIMIT 1), ?, 1);")
   end
   
   #
@@ -49,11 +53,17 @@ class Eye
     # Create the wordpair table
     @db.execute("create table if not exists pairs (id INTEGER PRIMARY KEY, word_id INTEGER(8), pair_id INTEGER(8), occurance INTEGER(10) DEFAULT 1 NOT NULL, question_suffix INTEGER DEFAULT 0 NOT NULL, comma_suffix INTEGER DEFAULT 0 NOT NULL, dot_suffix INTEGER DEFAULT 0 NOT NULL, exclamation_suffix INTEGER DEFAULT 0 NOT NULL);")
     
+    # Create our tripair table
+    @db.execute("create table if not exists tripairs (id INTEGER PRIMARY KEY, first_id INTEGER(8), second_id INTEGER(8), third_id INTEGER(8), occurance INTEGER(10) DEFAULT 1 NOT NULL, question_suffix INTEGER DEFAULT 0 NOT NULL, comma_suffix INTEGER DEFAULT 0 NOT NULL, dot_suffix INTEGER DEFAULT 0 NOT NULL, exclamation_suffix INTEGER DEFAULT 0 NOT NULL);")
+
     # Create the nouns table (for context)
     @db.execute("create table if not exists nouns (id INTEGER PRIMARY KEY, noun VARCHAR(50) UNIQUE NOT NULL);")
     
     # Create table linking nouns and pairs
     @db.execute("create table if not exists context (id INTEGER PRIMARY KEY, noun_id INTEGER, pair_identifier INTEGER);")
+    
+    # Create emotion-table linking emotions to words
+    @db.execute("create table if not exists pair_emotions (id INTEGER PRIMARY KEY, pair_id INTEGER, emotion_index INTEGER, tripair TINYINT);")
     
     if @debug == true
       puts "Should have created tables by now"
@@ -155,6 +165,85 @@ class Eye
   
   
   #
+  # Pair three words to one another with or without context,
+  # and returns an array of the pair IDs that were created.
+  # If words don't exist in database, they will be added.
+  # Special characters will be stripped away, and trailing
+  # non-word characters on word2 will increment appropriate columns
+  # in the database, to allow for calculation of chance such characters
+  # will trail the wordpair in the future
+  #
+  #
+  # Options:
+  # =>  context: an array of nouns
+  #
+  # @param string word1
+  # @param string word2
+  # @param string word3
+  # @param hash options
+  #
+  def tripair_words(word1, word2, word3, options = { context: [] })
+    
+    # First word shouldn't have a trailing special char (remember, it's the PAIR that has a suffix, not each word!)
+    word1 = word1.gsub(/\W/,'')
+    word2 = word2.gsub(/\W/,'')
+    
+    question_mark = 0
+    comma = 0
+    period = 0
+    exclamation_mark = 0
+    
+    # Check our second word for special characters, increment our values in the database, and strip them away
+    # Only check these if we know there's a special character
+    # in our string!
+    if word3 =~ /\W$/
+    
+      # First check if its a question
+      if word3 =~ /.+(\?)/
+        question_mark = 1
+      # if not, check if there's an exclamationmark
+      elsif word3 =~ /.+(!)/
+        exclamation_mark = 1
+      # no semicolon? Check for a dot!
+      elsif word3 =~ /.+(\.)/
+        period = 1
+      # Final try, check for a comma (most common)
+      elsif word3 =~ /.+([;|:])/
+        comma = 1
+      end
+      
+      if word3 !~ /https?:\/\/[\S]+/
+        word3 = word2.gsub(/\W/,'')
+      end
+    end
+    
+ 
+    # The first thing we need to do is add our words if they dont exist:
+    get_tripair_data = "SELECT * FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) AND third_id = (SELECT id FROM words WHERE word = ?) LIMIT 1;"
+    
+    # Add our words if they dont exist, using our prepared statement
+    @add_words.execute(word1)
+    @add_words.execute(word2)
+    
+    
+        
+    # Get previous data for this pair
+    r = @db.get_first_row(get_tripair_data,word1,word2,word3)
+        
+    unless r == nil
+      comma += r['comma_suffix'].to_i
+      period += r['period_suffix'].to_i
+      question_mark += r['question_suffix'].to_i
+      exclamation_mark += r['exclamation_suffix'].to_i
+    end      
+       
+    @add_tripair.execute(word1,word2,word3,word1,word2,word3,comma,period,question_mark,exclamation_mark)
+         
+    
+  end
+  
+  
+  #
   # Processes text, and learns from it by splitting it into words
   # before sorting out nouns. Nouns become context, words become
   # word pairs, [word pairs become quad-pairs] (<- maybe later), 
@@ -173,7 +262,15 @@ class Eye
     
     # Split the sentence into words by splitting on non-word delimiters
     words = msg.split(/\s+/)
+    has_emotion = []
     
+    @emotions.each_with_index do |i,em|
+      index = words.index em
+      unless index == nil
+        has_emotion[index-1] = i
+        words.delete_at(index)
+      end
+    end
     
     # Loop through all words, with the index, to access elements properly
     words.each_with_index do |word,i|
@@ -185,6 +282,18 @@ class Eye
        
         pair_words(words[i-1],word,{ context: nouns })
         puts "CALL # #{i}"
+        
+        # Pairs emoticons to our newly created pair
+        unless has_emotion.at(i) != nil
+          @pair_emotion.execute(has_emotion.at(i))
+        end
+      end
+      if i > 1
+        tripair_words(words[i-2], words[i-1], word)
+        
+        unless has_emotion.at(i) != nil
+          @tripair_emotion.execute(has_emotion.at(i),has_emotion.at(i))
+        end
       end
     end
   end

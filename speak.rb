@@ -193,7 +193,7 @@ class Mouth
       
       word_ids = {}
       prev_words.each do |w|
-        word_ids[w['wid'].to_sym] << w['probability']
+        word_ids[w['wid'].to_s.to_sym] << w['probability']
       end
       p = Pickup.new(word_ids)
       

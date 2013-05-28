@@ -22,6 +22,7 @@ class RheyaIRC
   match /^!wiki\s.+/, {method: :wiki }
   match /^!help.*/, { method: :print_help }
   match /^!markov.*/, {method: :markov }
+  match /^!nouns.*/, {method: :nouns }
   
   timer 600, method: :mentioned
   
@@ -45,6 +46,10 @@ class RheyaIRC
   
   def strip_command(msg)
     return msg.sub(/(^!\w+\s*)/,'')
+  end
+  
+  def nouns(msg)
+    msg.reply "I think the context of that was (reduced least important nouns if too many found): " + @rheya.brain.get_topic(strip_command(msg)).to_s  
   end
   
   def learn(msg)

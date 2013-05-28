@@ -183,11 +183,11 @@ class Mouth
       elsif all_words.count > 1 #and Random.rand(10) > 7
         prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT third_id as wid, occurance, (RANDOM()*10*(occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1);",all_words[i-1],all_words[i],all_words[i-1],all_words[i])      
       else
-         prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT pair_id as wid, occurance, (RANDOM()*10*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?)))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1);", prev_word,prev_word)
+         prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT pair_id as wid, occurance, (RANDOM()*10*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1);", prev_word,prev_word)
       end
       
       if prev_word == nil or all_words.count < 2
-        prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT pair_id as wid,occurance, (RANDOM()*10*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?)))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1);", prev_word,prev_word)
+        prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT pair_id as wid,occurance, (RANDOM()*10*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1);", prev_word,prev_word)
       end
       
       

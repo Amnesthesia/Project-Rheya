@@ -133,10 +133,7 @@ class Mouth
       emo = true
     end
     
-    word_info = []
-    word_info["emoticon"] = emo
-    word_info["word"] = next_word
-    word_info["punctuation"] = punctuation
+    word_info = { emoticon: emo, punctuation: punctuation, word: next_word }
     
     return word_info
   end
@@ -217,7 +214,7 @@ class Mouth
     
     e = Eye.new
     context = []
-    prev_word = []
+    prev_word = {}
     
     # Check if we were provided with multiple words or just one
     if msg.match(/^\w+\s+\w+.+/)
@@ -231,17 +228,17 @@ class Mouth
           prev_word = sentence
         else
           sentence = context.at(Random.rand(context.count))
-          prev_word["word"] = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")     
-          prev_word["punctuation"] = ''
+          prev_word[:word] = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")     
+          prev_word[:punctuation] = ''
         end
       else
         sentence = word.at(word.count-2)  
-        prev_word["word"] = word.last  
-        prev_word["punctuation"] = ''   
+        prev_word[:word] = word.last  
+        prev_word[:punctuation] = ''   
       end
     elsif msg == nil or msg.empty?
-      prev_word["word"] = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")
-      prev_word["punctuation"]
+      prev_word[:word:] = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")
+      prev_word[:punctuation]
       sentence = prev_word
       
       
@@ -261,10 +258,10 @@ class Mouth
     
     # Loop with a 1 in 25 chance of ending to construct a randomly sized sentence
     begin  
-      prev_word = get_word(prev_word["word"], { context: context })
+      prev_word = get_word(prev_word[:word], { context: context })
       
       if first_word == nil or first_word.empty?
-        first_word = prev_word["word"]
+        first_word = prev_word[:word]
       end
       
       # If this word came with a trailing question mark ...
@@ -278,18 +275,18 @@ class Mouth
         end
       end
       
-      if prev_word["emoticon"] == true and remember_previous_word != nil
-        prev_word["punctuation"] = " " + @db.get_first_value("SELECT emotion_index FROM pair_emotions WHERE pair_id = (SELECT id FROM pairs WHERE word_id = ? AND pair_id = ? LIMIT 1) ORDER BY RANDOM() LIMIT 1",remember_previous_word,prev_word["word"])
+      if prev_word[:emoticon] == true and remember_previous_word != nil
+        prev_word[:punctuation] = " " + @db.get_first_value("SELECT emotion_index FROM pair_emotions WHERE pair_id = (SELECT id FROM pairs WHERE word_id = ? AND pair_id = ? LIMIT 1) ORDER BY RANDOM() LIMIT 1",remember_previous_word,prev_word["word"])
       end
       
       # Append a randomly chosen word based to our semi-constructed sentence
-      sentence << " " << prev_word["word"] << prev_word["punctuation"] unless prev_word == nil
-      puts " added %s" %prev_word["word"]
+      sentence << " " << prev_word[:word] << prev_word[:punctuation] unless prev_word == nil
+      puts " added %s" %prev_word[:word]
       i += 1
       
       # Remember the word for one more iteration
       remember_previous_word = prev_word["word"]
-    end while (prev_word["punctuation"] != "?" and prev_word["punctuation"] != "!") and prev_word != nil
+    end while (prev_word[:punctuation] != "?" and prev_word[:punctuation] != "!") and prev_word != nil
     
     # Capitalize our sentence, of course (:
     sentence.capitalize!

@@ -110,15 +110,19 @@ class Eye
       # First check if its a question
       if word2 =~ /.+(\?)/
         question_mark = 1
+        puts "Updated #{word2} with +1 questionmark suffix"
       # if not, check if there's an exclamationmark
       elsif word2 =~ /.+(!)/
         exclamation_mark = 1
+        puts "Updated #{word2} with +1 exclamation suffix"
       # no semicolon? Check for a dot!
       elsif word2 =~ /.+(\.)/
         period = 1
+        puts "Updated #{word2} with +1 period suffix"
       # Final try, check for a comma (most common)
-      elsif word2 =~ /.+([;|:])/
+      elsif word2 =~ /.+([;|,])/
         comma = 1
+        puts "Updated #{word2} with +1 comma suffix"
       end
       if word2 !~ /https?:\/\/[\S]+/ and word2 =~ /\W/
         word2 = word2.gsub(/([^a-zA-Z'\/\s\d-]+)/,'')
@@ -270,7 +274,7 @@ class Eye
       end
     end
     
-    msg = msg.sub(/\b*\s+\W\s+\b*/,'')
+    #msg = msg.sub(/\b*\s+\W\s+\b*/,'')
     
     nouns = get_context(message)
     

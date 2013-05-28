@@ -5,7 +5,7 @@ class Sentence
   attr_accessor :who, :to_whom, :is_question, :is_exclamation, :mood, :target, :nouns, :verbs, :adjectives, :adverbs, :words
   
   def initialize(*args)
-    @sentence = args[0]
+    @sentence = args[1]
     @nouns = []
     @adjectives = []
     @words = []

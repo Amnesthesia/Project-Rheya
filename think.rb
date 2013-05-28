@@ -1,4 +1,5 @@
 require "treat"
+require "./sentence.rb"
 
 class Brain
   
@@ -23,7 +24,7 @@ class Brain
   end
   
   def get_nouns(msg)
-    s = sentence(msg)
+    s = sentence(:export_name,msg)
     nouns = []
     s.each do |m|
       nouns << m[1]

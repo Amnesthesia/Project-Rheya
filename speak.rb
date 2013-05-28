@@ -194,7 +194,7 @@ class Mouth
       word_ids = {}
       prev_words.each do |w|
         word_ids[w['wid'].to_s.to_sym] = w['probability']
-        puts "I added " + w['wid'] + " with probability " + w['probability']
+        puts "I added " + w['wid'].to_s + " with probability " + w['probability'].to_s
       end
       p = Pickup.new(word_ids)
       chosen_id = p.pick(1)

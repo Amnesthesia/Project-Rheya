@@ -17,11 +17,16 @@ class Brain
     
     if nouns.count > 3
       maximum_topics = (nouns.count / 2).round
-      nouns = nouns[0...maximum_topics]
+      nouns = nouns[0..maximum_topics]
     end
     
+    topic = []
     
-    return nouns
+    nouns.each do |n|
+      topic << n[0].to_s  
+    end
+    
+    return topic
   end
   
   def get_nouns(msg)

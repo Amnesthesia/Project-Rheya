@@ -155,9 +155,11 @@ class Eye
           period += r['period_suffix'].to_i
           question_mark += r['question_suffix'].to_i
           exclamation_mark += r['exclamation_suffix'].to_i
+          occurance = r['occurance'].to_i
+          occurance += 1
         end      
-       
-        @add_pair.execute(word1,word2,word1,word2,comma,period,question_mark,exclamation_mark)
+        
+        @add_pair.execute(word1,word2,word1,word2,occurance,comma,period,question_mark,exclamation_mark)
         
       # Afterwards, we need to add each context noun to our noun table, and link it to the created pair
       else
@@ -244,9 +246,11 @@ class Eye
       question_mark += r['question_suffix'].to_i
       exclamation_mark += r['exclamation_suffix'].to_i
       puts "Comma suffix was " + comma
+      occurance = r['occurance'].to_i
+      occurance += 1
     end      
        
-    @add_tripair.execute(word1,word2,word3,word1,word2,word3,comma,period,question_mark,exclamation_mark)
+    @add_tripair.execute(word1,word2,word3,word1,word2,word3,occurance,comma,period,question_mark,exclamation_mark)
          
     
   end

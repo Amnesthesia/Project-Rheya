@@ -237,7 +237,7 @@ class Mouth
         prev_word[:punctuation] = ''   
       end
     elsif msg == nil or msg.empty?
-      prev_word[:word:] = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")
+      prev_word[:word] = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")
       prev_word[:punctuation]
       sentence = prev_word
       

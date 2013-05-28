@@ -15,15 +15,15 @@ class Brain
     # Sort nouns by value (which is their occurance)
     nouns.sort_by{|k,v| v}.reverse
     
-    if nouns.count > 3
-      maximum_topics = (nouns.count / 2).round
-      nouns = nouns[0..maximum_topics]
-    end
     
     topic = []
+    i = 0
     
     nouns.each do |n|
-      topic << n[0].to_s  
+      topic << n[0].to_s
+      if i > (nouns.count / 2).round
+        break
+      end  
     end
     
     return topic

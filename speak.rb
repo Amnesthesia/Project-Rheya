@@ -216,6 +216,12 @@ class Mouth
     context = []
     prev_word = { word: '', emoticon: false, punctuation: '' }
     
+    @previously_said.each do |p|
+      context.zip(e.get_context(p)).flatten!
+    end unless @previously_said.empty?
+      
+    context.uniq
+    
     # Check if we were provided with multiple words or just one
     if msg.match(/^\w+\s+\w+.+/)
       word = msg.split(/\s+/)
@@ -224,29 +230,23 @@ class Mouth
         context = e.get_context(msg)
        
         if context.empty?
-          sentence = word.last
-          prev_word[:word] = sentence
+          sentence = msg
+          prev_word[:word] = msg.gsub(/[^a-zA-Z0-9\s]/,'')
           
         else
           sentence = context.at(Random.rand(context.count))
           prev_word[:word] = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")     
         end
       else
-        sentence = word.at(word.count-2)  
+        sentence = msg
         prev_word[:word] = word.last  
       end
     elsif msg == nil or msg.empty?
       prev_word[:word] = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")
-      sentence = prev_word[:word]
+      sentence = ''
       
-      
-      @previously_said.each do |p|
-        context.zip(e.get_context(p)).flatten!
-      end unless @previously_said.empty?
-      
-      context.uniq
     else
-      sentence = msg
+      sentence = ''
       prev_word[:word] = msg
     end
     
@@ -256,11 +256,7 @@ class Mouth
     
     # Loop with a 1 in 25 chance of ending to construct a randomly sized sentence
     begin  
-      prev_word = get_word(prev_word[:word], { context: context })
       
-      if first_word == nil or first_word.empty?
-        first_word = prev_word[:word]
-      end
       
       # If this word came with a trailing question mark ...
       if prev_word[:word] =~ /^\w+([\?])/
@@ -284,6 +280,7 @@ class Mouth
       
       # Remember the word for one more iteration
       remember_previous_word = prev_word["word"]
+      prev_word = get_word(prev_word[:word], { context: context })
     end while (prev_word[:punctuation] != "?" and prev_word[:punctuation] != "!") and prev_word != nil
     
     # Capitalize our sentence, of course (:

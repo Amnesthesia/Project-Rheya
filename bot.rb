@@ -99,7 +99,7 @@ class RheyaIRC
     msg.reply @rheya.mouth.read(strip_command(msg.message))
   end
   
-  def mentioned(msg)
+  def mentioned(msg = '')
     @rheya.last_mentions.each do |m|
       msg.reply m
     end

@@ -263,7 +263,7 @@ class Eye
     words = msg.split(/\s+/)
     has_emotion = []
     
-    words.each_with_index do |i,em|
+    words.each_with_index do |em,i|
       if i > 0 and @emotions.include? em
         has_emotion[i-1] = @emotions.index(em)
         words.delete_at(i)

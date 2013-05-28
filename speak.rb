@@ -194,10 +194,12 @@ class Mouth
       word_ids = {}
       prev_words.each do |w|
         word_ids[w['wid'].to_s.to_sym] = w['probability']
+        puts "I added " + w['wid'] + " with probability " + w['probability']
       end
       p = Pickup.new(word_ids)
+      chosen_id = p.pick(1)
       
-      prev_word = @db.get_first_value("SELECT word FROM words WHERE id = ?",p.pick(1).to_s.to_i)
+      prev_word = @db.get_first_value("SELECT word FROM words WHERE id = ?",chosen_id.to_s.to_i)
       
       
       # Append a randomly chosen word based on the previous word in the sentence

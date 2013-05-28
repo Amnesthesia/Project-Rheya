@@ -186,7 +186,7 @@ class Mouth
          prev_words = @db.execute("SELECT pair_id as wid, occurance, (occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1;", prev_word,prev_word)
       end
       
-      if prev_words == nil or all_words.count < 2
+      if prev_words == nil or all_words.count < 2 or prev_words.count < 1
         prev_words = @db.execute("SELECT pair_id as wid,occurance, (occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1;", prev_word,prev_word)
       end
       

@@ -39,7 +39,7 @@ class Ear
     @db.execute("INSERT INTO quotes VALUES(NULL,?)",msg)
     
     puts "I added #{msg} to quotes database"
-    
+    return @db.get_first_value("SELECT id FROM quotes ORDER BY id DESC LIMIT 1;")
   end
   
   #
@@ -49,6 +49,16 @@ class Ear
   #
   def random_quote
     quote = @db.get_first_value("SELECT quote FROM quotes ORDER BY RANDOM() LIMIT 1;")
+    return quote
+  end
+  
+  #
+  # Fetches a specific quote from the quotes database
+  # 
+  # @return string
+  #
+  def specific_quote(id)
+    quote = @db.get_first_value("SELECT quote FROM quotes WHERE id = ? LIMIT 1;",id)
     return quote
   end
   

@@ -98,6 +98,7 @@ class Mouth
     
     # Calculate the chance of a comma, semicolon, exclamationmark, dot or questionmark trailing this word
     
+    puts "Occurance of word " + word_data['nword'] + " is " + word_data['occurance'].to_i
     unless word_data['occurance'].to_i == 0
       
       unless word_data['question_suffix'].to_i == 0 or word_data['occurance'].to_i == 0
@@ -105,8 +106,11 @@ class Mouth
       end  
       
       exclamation_rate = (word_data['exclamation_suffix'].to_i / word_data['occurance'].to_i)*100 unless word_data['exclamation_suffix'] == 0
+      puts "Exclamation rate 0" if word_data['exclamation_suffix'] == 0
       comma_ratio = (word_data['comma_suffix'].to_i / word_data['occurance'].to_i)*100 unless word_data['comma_suffix'] == 0
+      puts "Comma rate 0" if word_data['comma_suffix'] == 0
       dot_ratio = (word_data['dot_suffix'].to_i / word_data['occurance'].to_i)*100 unless word_data['dot_suffix'] == 0
+      puts "Dot ratio 0" if word_data['dot_suffix'] == 0
     end
     
     
@@ -114,18 +118,27 @@ class Mouth
    
     
     next_word = word_data['nword']
+    punctuation = ''
+    emo = false
     
     if Random.rand(100) < question_rate
-      next_word << "?"
+      punctuation = "?"
     elsif Random.rand(100) < exclamation_rate
-      next_word << "!"
+      punctuation = "!"
     elsif Random.rand(100) < comma_ratio
-      next_word << ","
+      punctuation = ","
     elsif Random.rand(100) < dot_ratio
-      next_word << "."
+      punctuation = "."
+    elsif Random.rand(100) < 7
+      emo = true
     end
     
-    return next_word
+    word_info = []
+    word_info["emoticon"] = emo
+    word_info["word"] = next_word
+    word_info["punctuation"] = punctuation
+    
+    return word_info
   end
   
   #
@@ -169,8 +182,10 @@ class Mouth
     begin  
       if i==0 and all_words.count > 1
         prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT third_id FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1);",all_words[0],all_words[1])
-      elsif all_words.count > 1
+      elsif all_words.count > 1 and Random.rand(10) > 7
         prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT third_id FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1);",all_words[i-1],all_words[i])      
+      else
+         prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT pair_id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?)) ORDER BY RANDOM() LIMIT 1;", prev_word)
       end
       
       if prev_word == nil or all_words.count < 2
@@ -215,14 +230,17 @@ class Mouth
           prev_word = sentence
         else
           sentence = context.at(Random.rand(context.count))
-          prev_word = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")     
+          prev_word["word"] = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")     
+          prev_word["punctuation"] = ''
         end
       else
-        sentence = word.last  
-        prev_word = word.last     
+        sentence = word.at(word.count-2)  
+        prev_word["word"] = word.last  
+        prev_word["punctuation"] = ''   
       end
     elsif msg == nil or msg.empty?
-      prev_word = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")
+      prev_word["word"] = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")
+      prev_word["punctuation"]
       sentence = prev_word
       
       
@@ -238,14 +256,14 @@ class Mouth
     
     first_word = sentence
     i = 0
-    
+    remember_previous_word = nil
     
     # Loop with a 1 in 25 chance of ending to construct a randomly sized sentence
     begin  
-      prev_word = get_word(prev_word, { context: context })
+      prev_word = get_word(prev_word["word"], { context: context })
       
       if first_word == nil or first_word.empty?
-        first_word = prev_word
+        first_word = prev_word["word"]
       end
       
       # If this word came with a trailing question mark ...
@@ -259,12 +277,18 @@ class Mouth
         end
       end
       
+      if prev_word["emoticon"] == true and remember_previous_word != nil
+        prev_word["punctuation"] = " " + @db.get_first_value("SELECT emotion_index FROM pair_emotions WHERE pair_id = (SELECT id FROM pairs WHERE word_id = ? AND pair_id = ? LIMIT 1) ORDER BY RANDOM() LIMIT 1",remember_previous_word,prev_word["word"])
+      end
+      
       # Append a randomly chosen word based to our semi-constructed sentence
-      sentence << " " << prev_word unless prev_word == nil
-      puts " added %s" %prev_word
+      sentence << " " << prev_word["word"] << prev_word["punctuation"] unless prev_word == nil
+      puts " added %s" %prev_word["word"]
       i += 1
       
-    end while (prev_word !~ /^\w+([\?\.!])/) and prev_word != nil
+      # Remember the word for one more iteration
+      remember_previous_word = prev_word["word"]
+    end while (prev_word["punctuation"] != "?" and prev_word["punctuation"] != "!") and prev_word != nil
     
     # Capitalize our sentence, of course (:
     sentence.capitalize!

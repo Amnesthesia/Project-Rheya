@@ -59,7 +59,10 @@ class Rheya
   #
   # @param string message
   #
-  def recall
+  def recall(id)
+    if id =~ /^[-+]?[0-9]*\.?[0-9]+$/
+      return @ears.specific_quote(id)
+    end
     return @ears.random_quote
   end
   

@@ -239,6 +239,7 @@ class Eye
       period += r['period_suffix'].to_i
       question_mark += r['question_suffix'].to_i
       exclamation_mark += r['exclamation_suffix'].to_i
+      puts "Comma suffix was " + comma
     end      
        
     @add_tripair.execute(word1,word2,word3,word1,word2,word3,comma,period,question_mark,exclamation_mark)
@@ -260,22 +261,19 @@ class Eye
     # Make sure its a string (cause we can pass anything here!)
     msg = message.to_s
     words = msg.split(/\s+/)
-    @emotions.each_with_index do |i,em|
-      index = words.index em
-      unless index == nil
-        has_emotion[index-1] = i
-        words.delete_at(index)
+    has_emotion = []
+    
+    words.each_with_index do |i,em|
+      if i > 0 and @emotions.include? em
+        has_emotion[i-1] = @emotions.index(em)
+        words.delete_at(i)
       end
     end
     
-    words = words.join(' ')
     msg = msg.sub(/\b*\s+\W\s+\b*/,'')
     
     nouns = get_context(message)
     
-    # Split the sentence into words by splitting on non-word delimiters
-    words = msg.split(/\s+/)
-    has_emotion = []
     
     
     # Loop through all words, with the index, to access elements properly
@@ -290,14 +288,14 @@ class Eye
         puts "CALL # #{i}"
         
         # Pairs emoticons to our newly created pair
-        unless has_emotion.at(i) != nil
+        unless has_emotion.at(i) == nil
           @pair_emotion.execute(has_emotion.at(i))
         end
       end
       if i > 1
         tripair_words(words[i-2], words[i-1], word)
         
-        unless has_emotion.at(i) != nil
+        unless has_emotion.at(i) == nil
           @tripair_emotion.execute(has_emotion.at(i),has_emotion.at(i))
         end
       end

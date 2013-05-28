@@ -37,7 +37,7 @@ class RheyaIRC
    
     urls.each do |url|
       answer = Format(:grey, "Title: %s" % [Format(:bold, $WWW::Mechanize.new.get(url).title)] )
-      answer.chomp!
+      answer.strip!
       m.reply answer
     end
   end
@@ -55,21 +55,23 @@ class RheyaIRC
   end
   
   def say(msg)
+    msg.message.downcase!
     msg.reply @rheya.speak(strip_command(msg.message))
   end
   
   def markov(msg)
+    msg.message.downcase!
     msg.reply @rheya.markov(strip_command(msg.message))
   end
   
   def remember(msg)
-    @rheya.remember strip_command(msg.message)
+    id = @rheya.remember strip_command(msg.message)
     
-    msg.reply "I'll remember that :)"
+    msg.reply "I'll remember that :) [Memory #%s] " % id
   end
   
   def recall(msg)
-    msg.reply @rheya.recall
+    msg.reply @rheya.recall(strip_command(msg.message))
   end
   
   def tweet(msg)

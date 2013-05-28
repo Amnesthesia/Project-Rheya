@@ -98,7 +98,7 @@ class Mouth
     
     # Calculate the chance of a comma, semicolon, exclamationmark, dot or questionmark trailing this word
     
-    puts "Occurance of word " + word_data['nword'].to_i + " is " + word_data['occurance'].to_i
+    puts "Occurance of word " + word_data['nword'].to_s + " is " + word_data['occurance'].to_s
     unless word_data['occurance'].to_i == 0
       
       unless word_data['question_suffix'].to_i == 0 or word_data['occurance'].to_i == 0

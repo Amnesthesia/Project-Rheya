@@ -281,7 +281,7 @@ class Mouth
       # Remember the word for one more iteration
       remember_previous_word = prev_word["word"]
       prev_word = get_word(prev_word[:word], { context: context })
-    end while (prev_word[:punctuation] != "?" and prev_word[:punctuation] != "!") and prev_word != nil
+    end while prev_word != nil and (prev_word[:punctuation] != "?" and prev_word[:punctuation] != "!")
     
     # Capitalize our sentence, of course (:
     sentence.capitalize!

@@ -12,7 +12,8 @@ class RheyaIRC
   match /.+/, { method: :learn }
   match /^!speak.*/, { method: :say }
   match /^!remember\s.+/, { method: :remember }
-  match "!recall", {method: :recall }
+  match /^!recall.*/, {method: :recall }
+  match /^!wikiread/, {method: :wikilearn }
   match /^!tweet\s.+/, { method: :tweet }
   match /^!reply\s.+/, { method: :reply }
   match /^!follow\s.+/, { method: :follow }
@@ -112,6 +113,25 @@ class RheyaIRC
           msg.reply w
         end
         i += 1
+      end
+    end
+    return ""
+  end
+  
+  def wikilearn(msg)
+    message = strip_command(msg.message)
+    
+    wiki = @rheya.eyes.get_wiki message
+    i = 0
+    unless wiki.empty?
+      p = wiki.join(" ").gsub(/(\W\d+\W)/,"").split(/\n/)
+      p.each do |w|
+        
+        if i < 2
+          msg.reply w
+        end
+        i += 1
+        msg.reply "Oooh this looks interesting ... Thanks! Reading now... :D"
         @rheya.eyes.process_message(w)
       end
     end
@@ -123,7 +143,7 @@ class RheyaIRC
     msg.reply "I know the following commands:"
     msg.reply "  !markov [word] - Default markov ramble"
     msg.reply "  !mentions - Gets the latest tweets meant for meeeeee :D"
-    msg.reply "  !recall - I'll tell you a random quote or message if I remember it"
+    msg.reply "  !recall <#ID>- I'll tell you a random quote or message if I remember it (if your provide a specific ID I'll pull it out for you)"
     msg.reply "  !remember <message> - Store a quote or message"
     msg.reply "  !reply <message> - Reply to the last person who tweeted me"
     msg.reply "  !tweet <message> - Tweet a message from @CodetalkIRC"

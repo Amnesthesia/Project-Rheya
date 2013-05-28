@@ -214,7 +214,7 @@ class Mouth
     
     e = Eye.new
     context = []
-    prev_word = {}
+    prev_word = { word: '', emoticon: false, punctuation: '' }
     
     # Check if we were provided with multiple words or just one
     if msg.match(/^\w+\s+\w+.+/)
@@ -225,21 +225,19 @@ class Mouth
        
         if context.empty?
           sentence = word.last
-          prev_word = sentence
+          prev_word[:word] = sentence
+          
         else
           sentence = context.at(Random.rand(context.count))
           prev_word[:word] = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")     
-          prev_word[:punctuation] = ''
         end
       else
         sentence = word.at(word.count-2)  
         prev_word[:word] = word.last  
-        prev_word[:punctuation] = ''   
       end
     elsif msg == nil or msg.empty?
       prev_word[:word] = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")
-      prev_word[:punctuation]
-      sentence = prev_word
+      sentence = prev_word[:word]
       
       
       @previously_said.each do |p|
@@ -249,7 +247,7 @@ class Mouth
       context.uniq
     else
       sentence = msg
-      prev_word = msg
+      prev_word[:word] = msg
     end
     
     first_word = sentence
@@ -265,13 +263,13 @@ class Mouth
       end
       
       # If this word came with a trailing question mark ...
-      if prev_word =~ /^\w+([\?])/
+      if prev_word[:word] =~ /^\w+([\?])/
         
         # and the start of the sentence wasnt a question word ...
         unless @question_starters.include? first_word
           
           # get rid of that question mark!
-          prev_word.slice! "?"
+          prev_word[:word].slice! "?"
         end
       end
       

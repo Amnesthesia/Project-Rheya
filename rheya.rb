@@ -1,7 +1,7 @@
 require "./see.rb"
 require "./listen.rb"
 require "./speak.rb"
-
+require "./think.rb"
 #
 # This whole class is just a wrapper class linking 
 # all the other classes together and routing information
@@ -10,13 +10,14 @@ require "./speak.rb"
 
 class Rheya
   
-  attr_accessor :debug, :ears, :eyes, :mouth
+  attr_accessor :debug, :ears, :eyes, :mouth, :brain
   
   def initialize(*args)
     @debug = true
     @ears = Ear.new
     @mouth = Mouth.new
     @eyes = Eye.new
+    @brain = Brain.new
   end
   
   # 

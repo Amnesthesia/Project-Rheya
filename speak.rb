@@ -1,6 +1,7 @@
 require "twitter"
 require "sqlite3"
 require "arrayfields"
+require "pickup"
 require "./see.rb"
 
     
@@ -177,17 +178,26 @@ class Mouth
     
     # Loop with a 1 in 10 chance of ending to construct a randomly sized sentence
     begin  
-      if i==0 and all_words.count > 1
-        prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT third_id FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1);",all_words[0],all_words[1])
+      if i==0 and all_words.count > 1 and Random.rand(10) > 6
+        prev_words = @db.execute("SELECT third_id as wid,occurance, (occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1);",all_words[0],all_words[1],all_words[0],all_words[1])
       elsif all_words.count > 1 and Random.rand(10) > 7
-        prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT third_id FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1);",all_words[i-1],all_words[i])      
+        prev_words = @db.execute("SELECT third_id as wid,occurance, (occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1);",all_words[i-1],all_words[i],all_words[i-1],all_words[i])      
       else
-         prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT pair_id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?)) ORDER BY RANDOM() LIMIT 1;", prev_word)
+         prev_words = @db.execute("SELECT pair_id as wid,occurance, (occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1;", prev_word,prev_word)
       end
       
-      if prev_word == nil or all_words.count < 2
-        prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT pair_id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?)) ORDER BY RANDOM() LIMIT 1;", prev_word)
+      if prev_words == nil or all_words.count < 2
+        prev_words = @db.execute("SELECT pair_id as wid,occurance, (occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1;", prev_word,prev_word)
       end
+      
+      
+      word_ids = {}
+      prev_words.each do |w|
+        word_ids[w['wid'].to_sym] << w['probability']
+      end
+      p = Pickup.new(word_ids)
+      
+      prev_word = p.pick(1) 
       
       # Append a randomly chosen word based on the previous word in the sentence
       unless prev_word == nil
@@ -238,7 +248,7 @@ class Mouth
           prev_word[:word] = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")     
         end
       else
-        sentence = msg
+        sentence = ''
         prev_word[:word] = word.last  
       end
     elsif msg == nil or msg.empty?
@@ -281,7 +291,7 @@ class Mouth
       # Remember the word for one more iteration
       remember_previous_word = prev_word["word"]
       prev_word = get_word(prev_word[:word], { context: context })
-    end while prev_word != nil and (prev_word[:punctuation] != "?" and prev_word[:punctuation] != "!")
+    end while prev_word != nil and (prev_word[:punctuation] != "?" and prev_word[:punctuation] != "!") and sentence.length < 400
     
     # Capitalize our sentence, of course (:
     sentence.capitalize!

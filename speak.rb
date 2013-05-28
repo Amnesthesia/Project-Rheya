@@ -217,6 +217,7 @@ class Mouth
     
     e = Eye.new
     context = []
+    prev_word = []
     
     # Check if we were provided with multiple words or just one
     if msg.match(/^\w+\s+\w+.+/)

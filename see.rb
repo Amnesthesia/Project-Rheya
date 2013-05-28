@@ -5,15 +5,17 @@ require "wikicloth"
 require "rubygems"
 require "json"
 require "nokogiri"
+require "./think.rb"
 
 class Eye
-  attr_accessor :debug, :db, :determiners, :exempt, :add_words, :add_noun, :add_context, :add_pair
+  attr_accessor :debug, :db, :determiners, :exempt, :add_words, :add_noun, :add_context, :add_pair, :brain
   debug = true
   
   def initialize(*args)
     @db = SQLite3::Database.new("dictionary.db")
     @db.results_as_hash = true
     @debug = true
+    @brain = Brain.new
     
     # We use these to find nouns in sentences
     @determiners = ["a", "about", "an", "a few", "a little", "a number of", "all", "all of", "another", 
@@ -280,7 +282,8 @@ class Eye
     
     #msg = msg.sub(/\b*\s+\W\s+\b*/,'')
     
-    nouns = get_context(message)
+    #nouns = get_context(message)
+    nouns = @brain.get_topic(message)
     
     
     

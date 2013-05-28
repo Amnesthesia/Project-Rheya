@@ -190,7 +190,7 @@ class Mouth
         prev_word = @db.get_first_value("SELECT pair_id as wid,occurance, (RANDOM()*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;", prev_word,prev_word)
       end
       
-      puts "Got word id " + prev_word
+      puts "Got word id " + prev_word.to_s
       
       #word_ids = {}
       #prev_words.each do |w|

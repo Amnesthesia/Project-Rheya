@@ -247,7 +247,6 @@ class Eye
       period += r['period_suffix'].to_i
       question_mark += r['question_suffix'].to_i
       exclamation_mark += r['exclamation_suffix'].to_i
-      puts "Comma suffix was " + comma
       occurance = r['occurance'].to_i
       occurance += 1
     end      

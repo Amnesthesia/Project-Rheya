@@ -180,15 +180,15 @@ class Mouth
     # Loop with a 1 in 10 chance of ending to construct a randomly sized sentence
     begin  
       if i==0 and all_words.count > 1 #and Random.rand(10) > 6
-        prev_word = @db.get_first_value("SELECT third_id as wid, occurance, (RANDOM()*100*occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1)) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;",all_words[0],all_words[1],all_words[0],all_words[1])
+        prev_word = @db.get_first_value("SELECT third_id as wid, occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;",all_words[0],all_words[1],all_words[0],all_words[1])
       elsif all_words.count > 1 #and Random.rand(10) > 7
-        prev_word = @db.get_first_value("SELECT third_id as wid, occurance, (RANDOM()*100*occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1)) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;",all_words[i-1],all_words[i],all_words[i-1],all_words[i])      
+        prev_word = @db.get_first_value("SELECT third_id as wid, occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;",all_words[i-1],all_words[i],all_words[i-1],all_words[i])      
       else
-         prev_word = @db.get_first_value("SELECT pair_id as wid, occurance, (RANDOM()*100*occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1)) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ? LIMIT 1) ORDER BY probability DESC LIMIT 1;", prev_word,prev_word)
+         prev_word = @db.get_first_value("SELECT pair_id as wid, occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ? LIMIT 1) ORDER BY probability DESC LIMIT 1;", prev_word,prev_word)
       end
       
       if prev_word == nil or all_words.count < 2 or prev_word.empty?
-        prev_word = @db.get_first_value("SELECT pair_id as wid,occurance, (RANDOM()*100*occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1)) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;", prev_word,prev_word)
+        prev_word = @db.get_first_value("SELECT pair_id as wid,occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;", prev_word,prev_word)
       end
       
       puts "Got word id " + prev_word.to_s
@@ -208,6 +208,7 @@ class Mouth
       unless prev_word == nil
         sentence << " " << prev_word
         puts " added %s" %prev_word
+        all_words << prev_word
       end
       i += 1
     end while all_words.join(' ').length < 200 and prev_word != nil

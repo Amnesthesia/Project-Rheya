@@ -208,7 +208,7 @@ class Mouth
         puts " added %s" %prev_word
       end
       i += 1
-    end while all_words.join(' ').length < 400 and prev_word != nil
+    end while all_words.join(' ').length < 200 and prev_word != nil
     sentence.capitalize!
     return sentence
   end

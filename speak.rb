@@ -179,27 +179,27 @@ class Mouth
     # Loop with a 1 in 10 chance of ending to construct a randomly sized sentence
     begin  
       if i==0 and all_words.count > 1 #and Random.rand(10) > 6
-        prev_words = @db.execute("SELECT third_id as wid, occurance, (occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1)) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1;",all_words[0],all_words[1],all_words[0],all_words[1])
+        prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT third_id as wid, occurance, (RANDOM()*10*(occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1);",all_words[0],all_words[1],all_words[0],all_words[1])
       elsif all_words.count > 1 #and Random.rand(10) > 7
-        prev_words = @db.execute("SELECT third_id as wid, occurance, (occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1)) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1;",all_words[i-1],all_words[i],all_words[i-1],all_words[i])      
+        prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT third_id as wid, occurance, (RANDOM()*10*(occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1);",all_words[i-1],all_words[i],all_words[i-1],all_words[i])      
       else
-         prev_words = @db.execute("SELECT pair_id as wid, occurance, (occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1;", prev_word,prev_word)
+         prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT pair_id as wid, occurance, (RANDOM()*10*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?)))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1);", prev_word,prev_word)
       end
       
-      if prev_words == nil or all_words.count < 2 or prev_words.count < 1
-        prev_words = @db.execute("SELECT pair_id as wid,occurance, (occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY RANDOM() LIMIT 1;", prev_word,prev_word)
+      if prev_word == nil or all_words.count < 2
+        prev_word = @db.get_first_value("SELECT word FROM words WHERE id = (SELECT pair_id as wid,occurance, (RANDOM()*10*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?)))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1);", prev_word,prev_word)
       end
       
       
-      word_ids = {}
-      prev_words.each do |w|
-        word_ids[w['wid'].to_s.to_sym] = w['probability']
-        puts "I added " + w['wid'].to_s + " with probability " + w['probability'].to_s
-      end
-      p = Pickup.new(word_ids)
-      chosen_id = p.pick(1)
+      #word_ids = {}
+      #prev_words.each do |w|
+        #word_ids[w['wid'].to_s.to_sym] = w['probability']
+        #puts "I added " + w['wid'].to_s + " with probability " + w['probability'].to_s
+      #end
+      #p = Pickup.new(word_ids)
+      #chosen_id = p.pick(1)
       
-      prev_word = @db.get_first_value("SELECT word FROM words WHERE id = ?",chosen_id.to_s.to_i)
+      #prev_word = @db.get_first_value("SELECT word FROM words WHERE id = ?",chosen_id.to_s.to_i)
       
       
       # Append a randomly chosen word based on the previous word in the sentence

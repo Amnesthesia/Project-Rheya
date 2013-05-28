@@ -49,7 +49,7 @@ class RheyaIRC
   end
   
   def nouns(msg)
-    msg.reply "I think the context of that was (reduced least important nouns if too many found): " + @rheya.brain.get_topic(strip_command(msg)).to_s  
+    msg.reply "I think the context of that was (reduced least important nouns if too many found): " + @rheya.brain.get_topic(strip_command(msg.message)).to_s  
   end
   
   def learn(msg)

@@ -88,7 +88,7 @@ class Eye
   def add_statistics(u, words)
     
     puts "I will try to add " + u.to_s + " to statistics"
-    data = @db.get_first_row("SELECT * FROM statistics WHERE user = ?", u)
+    data = @db.get_first_row("SELECT * FROM statistics WHERE user = ?", u.to_s)
     
     lines = 0
     words = 0
@@ -101,7 +101,7 @@ class Eye
     lines += 1
     words += words.to_i
     
-    @add_statistics.execute(u,u,lines,words)
+    @add_statistics.execute(u.to_s,u.to_s,lines,words)
     
   end
   #

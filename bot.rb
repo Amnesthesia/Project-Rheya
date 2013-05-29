@@ -134,10 +134,15 @@ class RheyaIRC
         
         if i < 2
           msg.reply w
+        elsif i == 3
+          msg.reply "Oooh this looks interesting ... Thanks! Reading now... :D"
+        end
+        
+        w.split(".").each do |sentence|
+          @rheya.eyes.process_message(w)
         end
         i += 1
-        msg.reply "Oooh this looks interesting ... Thanks! Reading now... :D"
-        @rheya.eyes.process_message(w)
+        
       end
     end
     return ""

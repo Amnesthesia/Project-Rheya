@@ -182,18 +182,18 @@ class Mouth
       backup_word = prev_word
       
       if i==0 and all_words.count > 1 #and Random.rand(10) > 6
-        prev_word = @db.get_first_value("SELECT third_id as wid, occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;",all_words[0],all_words[1],all_words[0],all_words[1])
+        prev_word = @db.get_first_row("SELECT third_id as wid, occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;",all_words[0],all_words[1],all_words[0],all_words[1])
       elsif all_words.count > 1 #and Random.rand(10) > 7
-        prev_word = @db.get_first_value("SELECT third_id as wid, occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;",all_words[i-1],all_words[i],all_words[i-1],all_words[i])      
+        prev_word = @db.get_first_row("SELECT third_id as wid, occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;",all_words[i-1],all_words[i],all_words[i-1],all_words[i])      
       else
-         prev_word = @db.get_first_value("SELECT pair_id as wid, occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ? LIMIT 1) ORDER BY probability DESC LIMIT 1;", prev_word,prev_word)
+         prev_word = @db.get_first_row("SELECT pair_id as wid, occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ? LIMIT 1) ORDER BY probability DESC LIMIT 1;", prev_word,prev_word)
       end
       
-      prev_word = @db.get_first_value("SELECT word FROM words WHERE id = ?",prev_word)
+      prev_word = @db.get_first_value("SELECT word FROM words WHERE id = ?",prev_word['wid'])
       
       if prev_word == nil or all_words.count < 2 or prev_word.empty?
-        prev_word = @db.get_first_value("SELECT pair_id as wid,occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;", backup_word,backup_word)
-        prev_word = @db.get_first_value("SELECT word FROM words WHERE id = ?",prev_word)
+        prev_word = @db.get_first_row("SELECT pair_id as wid,occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;", backup_word,backup_word)
+        prev_word = @db.get_first_value("SELECT word FROM words WHERE id = ?",prev_word['wid'])
       end
       if prev_word == backup_word
         prev_word = nil

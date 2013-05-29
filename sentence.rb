@@ -13,7 +13,7 @@ class Sentence
     @adverbs = []
     @to_whom = []
     
-    analyze(@sentence)
+    
   end
   
   def analyze(msg)

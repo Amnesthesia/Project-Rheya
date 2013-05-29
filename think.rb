@@ -32,16 +32,20 @@ class Brain
   
   def get_nouns(msg)
     s = Sentence.new(:export_name,msg)
+    s.analyze(msg)
     
     nouns = {}
    
-    s.nouns.each do |m|
-      nouns[m[0].to_sym] = m[1]
+    unless s.nouns.empty?
+      s.nouns.each do |m|
+        nouns[m[0].to_sym] = m[1]
+      end
     end
     return nouns
   end
   
   def get_adjectives
+    
   end
   
   

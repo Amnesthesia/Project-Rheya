@@ -91,15 +91,16 @@ class Eye
     data = @db.get_first_row("SELECT * FROM statistics WHERE user = ?", u.to_s)
     
     lines = 0
-    words = 0
+    if words == 0
+      words = 1
+    end
     
     if data != nil
       lines = data['lines'].to_i
-      words = data['words'].to_i
+      words += data['words'].to_i
     end
     
     lines += 1
-    words += words.to_i
     
     @add_statistics.execute(u.to_s,u.to_s,lines,words)
     

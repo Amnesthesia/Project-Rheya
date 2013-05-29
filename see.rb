@@ -85,8 +85,8 @@ class Eye
   # @param string user
   # @param integer wordcount
   #
-  def add_statistics(user, words)
-    data = @db.get_first_row("SELECT * FROM statistics WHERE user = ?", user)
+  def add_statistics(u, words)
+    data = @db.get_first_row("SELECT * FROM statistics WHERE user = ?", u)
     
     lines = 0
     words = 0
@@ -99,7 +99,7 @@ class Eye
     lines += 1
     words += words.to_i
     
-    @add_statistics.execute(user,user,lines,words)
+    @add_statistics.execute(u,u,lines,words)
     
   end
   #

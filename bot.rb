@@ -23,7 +23,7 @@ class RheyaIRC
   match /^!help.*/, { method: :print_help }
   match /^!markov.*/, {method: :markov }
   match /^!nouns.*/, {method: :nouns }
-  match /^!stats/, { method :statistics }
+  match /^!stats/, { method: :statistics }
   
   timer 600, method: :mentioned
   
@@ -127,11 +127,13 @@ class RheyaIRC
     unless wiki.empty?
       p = wiki.join(" ").gsub(/(\W\d+\W)/,"").split(/\n/)
       p.each do |w|
-        
-        if i < 2
-          msg.reply w
-        end
         i += 1
+        if i < 3
+          msg.reply w
+        else
+          break
+        end
+        
       end
     end
     return ""

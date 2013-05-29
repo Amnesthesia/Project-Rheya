@@ -394,7 +394,7 @@ class Mouth
       line = i.to_s + ". " + d['user']
       line << " with "
       line << d['lines'].to_s
-      line << " and "
+      line << " lines and "
       line << d['words'].to_s
       line << " words"
       arr << line

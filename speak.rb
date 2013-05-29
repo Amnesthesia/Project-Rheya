@@ -179,6 +179,8 @@ class Mouth
     
     # Loop with a 1 in 10 chance of ending to construct a randomly sized sentence
     begin  
+      backup_word = prev_word
+      
       if i==0 and all_words.count > 1 #and Random.rand(10) > 6
         prev_word = @db.get_first_value("SELECT third_id as wid, occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM tripairs WHERE first_id = (SELECT id FROM words WHERE word = ?) AND second_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;",all_words[0],all_words[1],all_words[0],all_words[1])
       elsif all_words.count > 1 #and Random.rand(10) > 7
@@ -187,8 +189,11 @@ class Mouth
          prev_word = @db.get_first_value("SELECT pair_id as wid, occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ? LIMIT 1) ORDER BY probability DESC LIMIT 1;", prev_word,prev_word)
       end
       
+      prev_word = @db.get_first_value("SELECT word FROM words WHERE id = ?",prev_word)
+      
       if prev_word == nil or all_words.count < 2 or prev_word.empty?
-        prev_word = @db.get_first_value("SELECT pair_id as wid,occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;", prev_word,prev_word)
+        prev_word = @db.get_first_value("SELECT pair_id as wid,occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;", backup_word,backup_word)
+        prev_word = @db.get_first_value("SELECT word FROM words WHERE id = ?",prev_word)
       end
       
       puts "Got word id " + prev_word.to_s
@@ -201,7 +206,7 @@ class Mouth
       #p = Pickup.new(word_ids)
       #chosen_id = p.pick(1)
       
-      prev_word = @db.get_first_value("SELECT word FROM words WHERE id = ?",prev_word)
+      
       
       
       # Append a randomly chosen word based on the previous word in the sentence

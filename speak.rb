@@ -290,7 +290,7 @@ class Mouth
       end
       
       # Append a randomly chosen word based to our semi-constructed sentence
-      sentence << " " << prev_word[:word] << prev_word[:punctuation] unless prev_word == nil
+      sentence << prev_word[:word] << prev_word[:punctuation] << " " unless prev_word == nil
       puts " added %s" %prev_word[:word]
       i += 1
       

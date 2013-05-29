@@ -7,7 +7,7 @@ gem "sqlite3"
 gem "twitter"
 gem "arrayfields"
 gem "expression_parser"
-gem "json"
+gem "json", '~> 1.7.7'
 gem "nokogiri"
 gem "wikipedia"
 gem "treat"

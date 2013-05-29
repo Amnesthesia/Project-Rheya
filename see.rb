@@ -86,6 +86,8 @@ class Eye
   # @param integer wordcount
   #
   def add_statistics(u, words)
+    
+    puts "I will try to add " + u + " to statistics"
     data = @db.get_first_row("SELECT * FROM statistics WHERE user = ?", u)
     
     lines = 0

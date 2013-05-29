@@ -23,6 +23,7 @@ class RheyaIRC
   match /^!help.*/, { method: :print_help }
   match /^!markov.*/, {method: :markov }
   match /^!nouns.*/, {method: :nouns }
+  match /^!stats/, { method :statistics }
   
   timer 600, method: :mentioned
   
@@ -35,7 +36,13 @@ class RheyaIRC
   end
   
   def get_title(m)
-    urls = URI.extract(m.message)
+    if m.message =~ /(^\w+:\s*)/
+      msg = m.message.gsub(/(^\w+:\s*)/,'')
+    else
+      msg = m.message
+    end
+    
+    urls = URI.extract(msg)
    
     urls.each do |url|
       answer = Format(:grey, "Title: %s" % [Format(:bold, $WWW::Mechanize.new.get(url).title)] )
@@ -55,8 +62,15 @@ class RheyaIRC
   def learn(msg)
     unless msg.user == "Rheya" or msg.user == "Inara" or msg.user == "River"
       unless msg.action?
+        @rheya.eyes.add_statistics(msg.user,msg.message.split(/\s+/).count)
         @rheya.learn(strip_command(msg.message))
       end
+    end
+  end
+  
+  def statistics(msg)
+    @rheya.mouth.get_statistics.each do |stat|
+      msg.reply stat
     end
   end
   
@@ -158,6 +172,7 @@ class RheyaIRC
     msg.reply "  !reply <message> - Reply to the last person who tweeted me"
     msg.reply "  !tweet <message> - Tweet a message from @CodetalkIRC"
     msg.reply "  !speak [word] - If you give me a word or a long sentence, I'll try to stay on topic. Note: try. Otherwise I'll just ramble."
+    msg.reply "  !stats - I'll show you who's the loudest in here"
     msg.reply "  !wiki <page name> - I'll try to find you the wiki page and give you a summary"
     msg.reply ""
   end

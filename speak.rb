@@ -373,6 +373,30 @@ class Mouth
   end
   
   #
+  # Returns statistics in an array
+  # of speakable lines
+  #
+  # @return array
+  #
+  def get_statistics(arg = '')
+    data = @db.execute("SELECT * FROM statistics ORDER BY lines DESC;")
+    
+    arr = []
+    i = 1
+    data.each do |d|
+      line = i.to_s + ". " + d['user']
+      line << " with "
+      line << d['lines'].to_s
+      line << " and "
+      line << d['words'].to_s
+      line << " words"
+      i += 1
+    end
+    
+    return arr
+  end
+  
+  #
   # Replies to the user posting the last mention
   # 
   # @param string msg

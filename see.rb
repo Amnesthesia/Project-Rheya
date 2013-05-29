@@ -8,7 +8,7 @@ require "nokogiri"
 require "./think.rb"
 
 class Eye
-  attr_accessor :debug, :db, :determiners, :exempt, :add_words, :add_noun, :add_context, :add_pair, :brain
+  attr_accessor :debug, :db, :determiners, :exempt, :add_words, :add_noun, :add_context, :add_pair, :add_statistics, :brain
   debug = true
   
   def initialize(*args)
@@ -43,6 +43,7 @@ class Eye
     @add_tripair = @db.prepare("INSERT OR REPLACE INTO tripairs (id, first_id, second_id, third_id, occurance, comma_suffix, dot_suffix, question_suffix, exclamation_suffix) VALUES ((SELECT id FROM tripairs WHERE first_id = ? AND second_id = ? AND third_id = ?), (SELECT id FROM words WHERE word = ? ), (SELECT id FROM words WHERE word = ?), (SELECT id FROM words WHERE word = ?), ?,?,?,?,?)")
     @pair_emotion = @db.prepare("INSERT OR REPLACE INTO pair_emotions (id, pair_id, emotion_index, tripair) VALUES ((SELECT id FROM pair_emotions WHERE pair_id = (SELECT id FROM pairs ORDER BY id DESC LIMIT 1) AND emotion_index = ? AND tripair = 0), (SELECT id FROM pairs ORDER BY id DESC LIMIT 1), ?, 0);")
     @tripair_emotion = @db.prepare("INSERT OR REPLACE INTO pair_emotions (id, pair_id, emotion_index, tripair) VALUES ((SELECT id FROM pair_emotions WHERE pair_id = (SELECT id FROM tripairs ORDER BY id DESC LIMIT 1) AND emotion_index = ? AND tripair = 1), (SELECT id FROM tripairs ORDER BY id DESC LIMIT 1), ?, 1);")
+    @add_statistics = @db.prepare("INSERT OR REPLACE INTO statistics (id, user, lines, words) VALUES ((SELECT id FROM statistics WHERE user = ? LIMIT 1), ?, ?, ?);")
   end
   
   #
@@ -67,12 +68,40 @@ class Eye
     # Create emotion-table linking emotions to words
     @db.execute("create table if not exists pair_emotions (id INTEGER PRIMARY KEY, pair_id INTEGER, emotion_index INTEGER, tripair TINYINT);")
     
+    # Create statistics table
+    @db.execute("create table if not exists statistics (id INTEGER PRIMARY KEY, user VARCHAR(15), lines INTEGER DEFAULT 1, words INTEGER DEFAULT 0);")
+    
     if @debug == true
       puts "Should have created tables by now"
     end
     
   end  
   
+  #
+  # Keeps track of who talks the most; updates (or adds)
+  # a user to the table, and continues to update with adding
+  # lines and words (not channel specific)
+  #
+  # @param string user
+  # @param integer wordcount
+  #
+  def add_statistics(user, words)
+    data = @db.get_first_row("SELECT * FROM statistics WHERE user = ?", user)
+    
+    lines = 0
+    words = 0
+    
+    if data != nil
+      lines = data['lines'].to_i
+      words = data['words'].to_i
+    end
+    
+    lines += 1
+    words += words.to_i
+    
+    @add_statistics.execute(user,user,lines,words)
+    
+  end
   #
   # Pair two words to one another with or without context,
   # and returns an array of the pair IDs that were created.

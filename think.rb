@@ -20,7 +20,7 @@ class Brain
     i = 1
     
     nouns.each do |n|
-      topic << n[0].to_s
+      topic << n[0].to_s.downcase
       if (nouns.count>3) and i > (nouns.count / 2).round
         break
       end  

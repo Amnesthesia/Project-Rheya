@@ -397,6 +397,7 @@ class Mouth
       line << " and "
       line << d['words'].to_s
       line << " words"
+      arr << line
       i += 1
     end
     

@@ -13,7 +13,7 @@ class RheyaIRC
   match /^!speak.*/, { method: :say }
   match /^!remember\s.+/, { method: :remember }
   match /^!recall.*/, {method: :recall }
-  match /^!wikiread/, {method: :wikilearn }
+  match /^!w/, {method: :wikilearn }
   match /^!tweet\s.+/, { method: :tweet }
   match /^!reply\s.+/, { method: :reply }
   match /^!follow\s.+/, { method: :follow }

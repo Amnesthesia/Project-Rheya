@@ -123,45 +123,29 @@ class RheyaIRC
     message = strip_command(msg.message)
     
     wiki = @rheya.eyes.get_wiki message
-    i = 0
-    unless wiki.empty?
-      p = wiki.join(" ").gsub(/(\W\d+\W)/,"").split(/\n/)
-      p.each do |w|
-        i += 1
-        if i < 3
-          msg.reply w
-        else
-          break
-        end
-        
-      end
-    end
-    return ""
+    p = wiki.join(" ").gsub(/(\W\d+\W)/,"")
+      
+    said_msg = wiki.slice(0,900)
+    said_msg << "..."
+    msg.reply said_msg
+
   end
   
   def wikilearn(msg)
     message = strip_command(msg.message)
     
     wiki = @rheya.eyes.get_wiki message
-    i = 0
+    p = wiki.join(" ").gsub(/(\W\d+\W)/,"")
+      
+    said_msg = wiki.slice(0,900)
+    said_msg << "..."
+    msg.reply said_msg
+    
     unless wiki.empty?
-      p = wiki.join(" ").gsub(/(\W\d+\W)/,"").split(/\n/)
-      p.each do |w|
-        
-        if i < 2
-          msg.reply w
-        elsif i == 3
-          msg.reply "Oooh this looks interesting ... Thanks! Reading now... :D"
-        end
-        
-        w.split(".").each do |sentence|
-          @rheya.eyes.process_message(w)
-        end
-        i += 1
-        
-      end
+      msg.reply "Oooh this looks interesting ... "
+      @rheya.eyes.process_message(wiki)
+      msg.reply "I'm done reading about %s now :) I feel so much smarter!" % message
     end
-    return ""
   end
   
   

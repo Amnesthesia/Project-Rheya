@@ -189,7 +189,7 @@ class Mouth
          prev_word = @db.get_first_row("SELECT pair_id as wid, occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ? LIMIT 1) ORDER BY probability DESC LIMIT 1;", prev_word,prev_word)
       end
       
-      prev_word = @db.get_first_value("SELECT word FROM words WHERE id = ?",prev_word['wid'])
+      prev_word = @db.get_first_value("SELECT word FROM words WHERE id = ?",prev_word['wid']) unless prev_word == nil
       
       if prev_word == nil or all_words.count < 2 or prev_word.empty?
         prev_word = @db.get_first_row("SELECT pair_id as wid,occurance, (RANDOM()*100*(occurance*1.0/(SELECT SUM(occurance) FROM pairs WHERE word_id=(SELECT id FROM words WHERE word = ?) LIMIT 1))) as probability FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) ORDER BY probability DESC LIMIT 1;", backup_word,backup_word)
@@ -305,7 +305,7 @@ class Mouth
       remember_previous_word = prev_word["word"]
       if prev_word[:punctuation] == "." or prev_word[:punctuation] == "!" or prev_word[:punctuation] == "."
         prev_word = get_word(prev_word[:word], { context: context })
-        prev_word["word"].capitalize!
+        prev_word["word"].capitalize! unless prev_word["word"] == nil or prev_word["word"].empty?
       else
         prev_word = get_word(prev_word[:word], { context: context })   
       end

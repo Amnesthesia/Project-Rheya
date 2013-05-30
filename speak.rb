@@ -293,7 +293,7 @@ class Mouth
       end
       
       if prev_word[:emoticon] == true and remember_previous_word != nil
-        prev_word[:punctuation] = " " + @db.get_first_value("SELECT emotion_index FROM pair_emotions WHERE pair_id = (SELECT id FROM pairs WHERE word_id = ? AND pair_id = ? LIMIT 1) ORDER BY RANDOM() LIMIT 1",remember_previous_word,prev_word["word"])
+        prev_word[:punctuation] = " " + @db.get_first_value("SELECT emotion_index FROM pair_emotions WHERE pair_id = (SELECT id FROM pairs WHERE word_id = ? AND pair_id = ? LIMIT 1) ORDER BY RANDOM() LIMIT 1",remember_previous_word[:word],prev_word["word"])
       end
       
       # Append a randomly chosen word based to our semi-constructed sentence
@@ -302,12 +302,11 @@ class Mouth
       i += 1
       
       # Remember the word for one more iteration
-      remember_previous_word = prev_word["word"]
-      if prev_word[:punctuation] == "." or prev_word[:punctuation] == "!" or prev_word[:punctuation] == "."
-        prev_word = get_word(prev_word[:word], { context: context })
+      remember_previous_word = prev_word
+      prev_word = get_word(remember_previous[:word], { context: context })
+      
+      if remember_previous_word[:punctuation] == "." or remember_previous_word[:punctuation] == "!" or remember_previous_word[:punctuation] == "." or prev_word[:word] == 'i'
         prev_word["word"].capitalize! unless prev_word["word"] == nil or prev_word["word"].empty?
-      else
-        prev_word = get_word(prev_word[:word], { context: context })   
       end
       
     end while prev_word != nil and (prev_word[:punctuation] != "?" and prev_word[:punctuation] != "!") and sentence.length < 400

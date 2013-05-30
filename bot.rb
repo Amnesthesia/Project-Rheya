@@ -36,7 +36,7 @@ class RheyaIRC
   end
   
   def get_title(m)
-    if m.message =~ /(^\w+:\s*)/
+    if m.message =~ /(^\w+:\s+)/
       msg = m.message.gsub(/(^\w+:\s*)/,'')
     else
       msg = m.message
@@ -60,7 +60,7 @@ class RheyaIRC
   end
   
   def learn(msg)
-    unless msg.user == "Rheya" or msg.user == "Inara" or msg.user == "River"
+    unless msg.user.to_s == "Rheya" or msg.user.to_s == "Inara" or msg.user.to_s == "River"
       unless msg.action?
         @rheya.eyes.add_statistics(msg.user,msg.message.split(/\s+/).count)
         @rheya.learn(strip_command(msg.message))

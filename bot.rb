@@ -13,7 +13,7 @@ class RheyaIRC
   match /^!speak.*/, { method: :say }
   match /^!remember\s.+/, { method: :remember }
   match /^!recall.*/, {method: :recall }
-  match /^!w/, {method: :wikilearn }
+  match /^!w\s+/, {method: :wikilearn }
   match /^!tweet\s.+/, { method: :tweet }
   match /^!reply\s.+/, { method: :reply }
   match /^!follow\s.+/, { method: :follow }
@@ -132,7 +132,7 @@ class RheyaIRC
     wiki = @rheya.eyes.get_wiki message
     p = wiki.join(" ").gsub(/(\W\d+\W)/,"")
       
-    said_msg = wiki.slice(0,900)
+    said_msg = p.slice(0,900)
     said_msg << "..."
     msg.reply said_msg
 
@@ -144,7 +144,7 @@ class RheyaIRC
     wiki = @rheya.eyes.get_wiki message
     p = wiki.join(" ").gsub(/(\W\d+\W)/,"")
       
-    said_msg = wiki.slice(0,900)
+    said_msg = p.slice(0,900)
     said_msg << "..."
     msg.reply said_msg
     

@@ -60,12 +60,19 @@ class RheyaIRC
   end
   
   def learn(msg)
+    if msg.user.to_s == "Foxboron" and msg.message =~ /\s+(to)/
+      msg.reply "Foxboron: too*"
+    elsif msg.user.to_s == "Foxboron" and msg.message =~ /\s+(too)\s+/
+      msg.reply "Foxboron: to*"
+    end
+    
     unless msg.user.to_s == "Rheya" or msg.user.to_s == "Inara" or msg.user.to_s == "River"
       unless msg.action?
         @rheya.eyes.add_statistics(msg.user,msg.message.split(/\s+/).count)
         @rheya.learn(strip_command(msg.message))
       end
     end
+    
   end
   
   def statistics(msg)

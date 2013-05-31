@@ -7,7 +7,7 @@ require "./see.rb"
     
 class Mouth
   
-  attr_accessor :debug, :db, :question_starters, :previously_said
+  attr_accessor :debug, :db, :question_starters, :previously_said, :emotions
   debug = true
  
   
@@ -16,7 +16,8 @@ class Mouth
     @db.results_as_hash = true
     @debug = true
     @question_starters = ["what", "who", "where", "when", "which", "how","wherefore", "whatever", "whom", "whose", "whither", "why", "whence", "do", "did", "does", "will", "can", "is", "are"]
-    
+    @emotions = [":D", ":)", "(:", ":C", ":c", "C:", "c:", "=)", "^_^", "^^", ":3", "D:", "><", ">_<", "._.", ";__;", ":O", ":o", "o:", ":p", ":P", ":x", ":X", ":*", "o_o", "O_o", "oO", "o_O", ";)", "(;"]
+   
     @twit = Twitter::Client.new(
       :consumer_key => "9x9TByi4BjzXs9N1Oyv3gA",
       :consumer_secret => "3NfBK7yhwHZLz4ZOAyLZ6aN6amaB55nNCNph48PGs",
@@ -293,7 +294,11 @@ class Mouth
       end
       
       if prev_word[:emoticon] == true and remember_previous_word != nil
-        prev_word[:punctuation] = " " + @db.get_first_value("SELECT emotion_index FROM pair_emotions WHERE pair_id = (SELECT id FROM pairs WHERE word_id = ? AND pair_id = ? LIMIT 1) ORDER BY RANDOM() LIMIT 1",remember_previous_word[:word],prev_word["word"])
+        
+        emot = @db.get_first_value("SELECT emotion_index FROM pair_emotions WHERE pair_id = (SELECT id FROM pairs WHERE word_id = ? AND pair_id = ? LIMIT 1) ORDER BY RANDOM() LIMIT 1",remember_previous_word[:word],prev_word["word"])
+        unless emot == nil
+          prev_word[:punctuation] = " " + @emotion[emot]
+        end
       end
       
       # Append a randomly chosen word based to our semi-constructed sentence

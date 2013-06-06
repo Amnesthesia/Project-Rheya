@@ -135,11 +135,17 @@ class RheyaIRC
   
   def nsfw(msg)
     message = strip_command(msg.message)
-    words = message.split(/\s+/)
     
-    if words.count > 1 and (words[0] =~ /[a-zA-Z0-9]+/ and words[1] =~ /\d/)
-      user = words[0]
-      state = words[1].to_i
+    if message =~ /\s+/
+      words = message.split(/\s+/)
+      
+      if words.count > 1 and (words[0] =~ /[a-zA-Z0-9]+/ and words[1] =~ /\d/)
+        user = words[0]
+        state = words[1].to_i
+      else
+        user = msg.user.to_s
+        state = words.to_i
+      end
     else
       user = msg.user.to_s
       state = words.to_i

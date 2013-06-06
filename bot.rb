@@ -24,7 +24,7 @@ class RheyaIRC
   match /^!markov.*/, {method: :markov }
   match /^!nouns.*/, {method: :nouns }
   match /^!stats/, { method: :statistics }
-  match /^!nsfw\s.+/ { method :nsfw }
+  match /^!nsfw\s.+/, { method :nsfw }
   
   timer 600, method: :mentioned
   

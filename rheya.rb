@@ -34,7 +34,7 @@ class Rheya
   #
   # @param string message (optional)
   #
-  def speak(message = nil, context = [])
+  def speak(message = '', context = [])
     return @mouth.construct_sentence(message,context)
   end
   

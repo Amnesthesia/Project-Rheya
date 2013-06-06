@@ -14,7 +14,8 @@ class Ear
     
     # If our tables dont exist, lets set them up :)
     create_structure
-    
+    @nsfw_url = []
+    load_nsfw
     
     @change_nsfw = @db.prepare("INSERT OR REPLACE INTO nsfwlink_status (id, user, nsfw) VALUES ((SELECT id FROM nsfwlink_status WHERE user = ?), ?, ?);")
   end
@@ -93,6 +94,9 @@ class Ear
   def load_nsfw
     nsfw = @db.execute("SELECT user,nsfw FROM nsfwlink_status ORDER BY id DESC;")
     @nsfw_url = []
+    if nsfw == nil
+      return nil
+    end
     nsfw.each do |n| 
       if n['nsfw'].to_i > 0
         @nsfw_url << n['user']

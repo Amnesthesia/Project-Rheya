@@ -25,6 +25,8 @@ class RheyaIRC
   match /^!nouns.*/, {method: :nouns }
   match /^!stats/, { method: :statistics }
   match /^!nsfw\s.+/, { method: :nsfw }
+  match /^Rheya:\s.+/, { method: :speakback }
+  match /^Rheya,\s.+/, {method: :speakback }
   
   timer 600, method: :mentioned
   
@@ -116,6 +118,16 @@ class RheyaIRC
   def reply(msg)
     @rheya.reply strip_command(msg.message)
     msg.reply "Said and done :)"
+  end
+  
+  def speakback(msg)
+    context = @rheya.brain.get_topic(msg.message)
+    
+    if context.count > 1
+      msg.reply @rheya.speak(context[Random.rand(context.count-1)])
+    elsif context.count > 0
+      msg.reply @rheya.speak(context[0])
+    end
   end
   
   def follow(msg)

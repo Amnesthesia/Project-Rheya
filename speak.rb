@@ -408,6 +408,8 @@ class Mouth
       line << d['words'].to_s
       line << " words"
       arr << line
+      
+      break if i>5
       i += 1
     end
     

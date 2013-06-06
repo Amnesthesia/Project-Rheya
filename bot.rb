@@ -24,6 +24,7 @@ class RheyaIRC
   match /^!markov.*/, {method: :markov }
   match /^!nouns.*/, {method: :nouns }
   match /^!stats/, { method: :statistics }
+  match /^!nsfw\s.+/ { method :nsfw }
   
   timer 600, method: :mentioned
   
@@ -45,11 +46,17 @@ class RheyaIRC
     urls = URI.extract(msg)
    
     urls.each do |url|
-      answer = Format(:grey, "Title: %s" % [Format(:bold, $WWW::Mechanize.new.get(url).title)] )
+      if @rheya.ears.nsfw_url.include? m.user.to_s.downcase 
+        answer = Format(:grey, "[NSFW by default] Title: %s" % [Format(:bold, $WWW::Mechanize.new.get(url).title)] )
+      else
+        answer = Format(:grey, "Title: %s" % [Format(:bold, $WWW::Mechanize.new.get(url).title)] )
+      end
+      
       answer.strip!
       m.reply answer
     end
   end
+  
   
   def strip_command(msg)
     return msg.sub(/(^!\w+\s*)/,'')
@@ -60,7 +67,7 @@ class RheyaIRC
   end
   
   def learn(msg)
-    if msg.user.to_s == "Foxboron" and msg.message =~ /\s+(to)/
+    if msg.user.to_s == "Foxboron" and msg.message =~ /\s+(to)$/
       msg.reply "Foxboron: too*"
     elsif msg.user.to_s == "Foxboron" and msg.message =~ /\s+(too)\s+/
       msg.reply "Foxboron: to*"
@@ -123,6 +130,26 @@ class RheyaIRC
   def mentioned(msg = '')
     @rheya.last_mentions.each do |m|
       msg.reply m
+    end
+  end
+  
+  def nsfw(msg)
+    message = strip_command(msg.message)
+    words = message.split(/\s+/)
+    
+    if words.count > 1 and (words[0] =~ /[a-zA-Z0-9]+/ and words[1] =~ /\d/)
+      user = words[0]
+      state = words[1].to_i
+    else
+      user = msg.user.to_s
+      state = words.to_i
+    end
+    
+    @rheya.ears.nsfw_links(user,state)
+    if state > 0
+      msg.reply "User " + user + " now sends NSFW links by default ... :D"
+    else
+      msg.reply "User " + user + " will now have to manually append NSFW to his/her links :/ GLHF"
     end
   end
   

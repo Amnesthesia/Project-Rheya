@@ -310,7 +310,7 @@ class Mouth
       remember_previous_word = prev_word
       prev_word = get_word(remember_previous_word[:word], { context: context })
       
-      if remember_previous_word[:punctuation] == "." or remember_previous_word[:punctuation] == "!" or remember_previous_word[:punctuation] == "." or prev_word[:word] == 'i'
+      if remember_previous_word[:punctuation] == "." or remember_previous_word[:punctuation] == "!" or remember_previous_word[:punctuation] == "." or (prev_word != nil and prev_word.has_key?(:word) and prev_word[:word] == 'i')
         prev_word["word"].capitalize! unless prev_word["word"] == nil or prev_word["word"].empty?
       end
       

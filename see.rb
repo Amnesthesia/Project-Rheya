@@ -44,6 +44,7 @@ class Eye
     @pair_emotion = @db.prepare("INSERT OR REPLACE INTO pair_emotions (id, pair_id, emotion_index, tripair) VALUES ((SELECT id FROM pair_emotions WHERE pair_id = (SELECT id FROM pairs ORDER BY id DESC LIMIT 1) AND emotion_index = ? AND tripair = 0), (SELECT id FROM pairs ORDER BY id DESC LIMIT 1), ?, 0);")
     @tripair_emotion = @db.prepare("INSERT OR REPLACE INTO pair_emotions (id, pair_id, emotion_index, tripair) VALUES ((SELECT id FROM pair_emotions WHERE pair_id = (SELECT id FROM tripairs ORDER BY id DESC LIMIT 1) AND emotion_index = ? AND tripair = 1), (SELECT id FROM tripairs ORDER BY id DESC LIMIT 1), ?, 1);")
     @add_statistics = @db.prepare("INSERT OR REPLACE INTO statistics (id, user, lines, words) VALUES ((SELECT id FROM statistics WHERE user = ? LIMIT 1), ?, ?, ?);")
+    
   end
   
   #
@@ -70,6 +71,8 @@ class Eye
     
     # Create statistics table
     @db.execute("create table if not exists statistics (id INTEGER PRIMARY KEY, user VARCHAR(15), lines INTEGER DEFAULT 1, words INTEGER DEFAULT 0);")
+    
+    
     
     if @debug == true
       puts "Should have created tables by now"
@@ -105,6 +108,9 @@ class Eye
     @add_statistics.execute(u.to_s,u.to_s,lines,words)
     
   end
+  
+  
+  
   #
   # Pair two words to one another with or without context,
   # and returns an array of the pair IDs that were created.

@@ -30,6 +30,20 @@ class Brain
     return topic
   end
   
+  def get_all_nouns(msg)
+    nouns = get_nouns(msg)
+
+    # Sort nouns by value (which is their occurance)
+    nouns.sort_by{|k,v| v}.reverse
+    topic = []
+    
+    nouns.each do |n|
+      topic << n[0].to_s.downcase
+    end
+    
+    return topic  
+  end
+  
   def get_nouns(msg)
     s = Sentence.new(:export_name,msg)
     s.analyze(msg)

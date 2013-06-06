@@ -234,20 +234,25 @@ class Mouth
   # @param string msg
   # @return string
   #
-  def construct_sentence(msg)
+  def construct_sentence(msg, predef_context = [])
     
     e = Eye.new
-    context = []
+    if predef_context.empty?
+      context = []  
+    else
+      context = predef_context
+    end
+    
     prev_word = { word: '', emoticon: false, punctuation: '' }
     
     @previously_said.each do |p|
       context.zip(e.get_context(p)).flatten!
-    end unless @previously_said.empty?
+    end unless @previously_said.empty? or !predef_context.empty?
       
     context.uniq
     
     # Check if we were provided with multiple words or just one
-    if msg.match(/^\w+\s+\w+.+/)
+    if msg != nil and msg.match(/^\w+\s+\w+.+/)
       word = msg.split(/\s+/)
       
       if word.count > 2

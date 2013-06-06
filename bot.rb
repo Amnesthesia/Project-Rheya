@@ -184,9 +184,10 @@ class RheyaIRC
   
   
   def print_help(msg)
-    msg.reply "I know the following commands:"
+    msg.reply "I know the following commands ([] is optional, <> is required):"
     msg.reply "  !markov [word] - Default markov ramble"
     msg.reply "  !mentions - Gets the latest tweets meant for meeeeee :D"
+    msg.reply "  !nsfw <[user] state> - Sets status of NSFW by default for specified user (or if no user specified, from the one who requested it)"
     msg.reply "  !recall <#ID>- I'll tell you a random quote or message if I remember it (if your provide a specific ID I'll pull it out for you)"
     msg.reply "  !remember <message> - Store a quote or message"
     msg.reply "  !reply <message> - Reply to the last person who tweeted me"

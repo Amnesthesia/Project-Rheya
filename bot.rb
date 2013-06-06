@@ -121,14 +121,14 @@ class RheyaIRC
   end
   
   def speakback(msg)
-    message = msg.message.gsub(/^Rheya\w+\s+/,'')
+    message = msg.message.gsub(/^Rheya\W*\s*/,'')
     context = @rheya.brain.get_topic(message)
     
     puts "Got contexts: " + context.to_s
     
     if context.count > 1
       word = context[Random.rand(context.count-1)]
-      puts "Speaking on word: " + word
+      puts "Speaking on randomized word: " + word
       msg.reply @rheya.speak(word)
     elsif context.count > 0
       puts "Speaking on word: " + context[0]

@@ -294,6 +294,24 @@ class Eye
     
   end
   
+  #
+  # Processes blocks of text, splits by punctuation, and 
+  # then processes each sentence separately
+  #
+  # @param string message
+  #
+  def process_message(message)
+    msg.message.to_s
+    
+    if msg =~ /[\.\?!;]/
+      msg.split(/[\.\?!;]/)
+      msg.each do |m|
+        process_sentence(m)
+      end
+    else
+      process_sentence(m)
+    end
+  end
   
   #
   # Processes text, and learns from it by splitting it into words
@@ -303,10 +321,8 @@ class Eye
   #
   # @param string message
   #
-  def process_message(message)
+  def process_sentence(msg)
 
-    # Make sure its a string (cause we can pass anything here!)
-    msg = message.to_s
     words = msg.split(/\s+/)
     has_emotion = []
     

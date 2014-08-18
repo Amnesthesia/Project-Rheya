@@ -236,7 +236,7 @@ class RheyaIRC
     @last_poll_id ||= @rheya.ears.get_last_poll_id
     message = strip_command(msg.message)
     poll = @rheya.mouth.get_poll(message.to_i||@last_poll_id)
-    puts "Poll is "+poll
+    
     @last_poll_id = poll[:id]
     msg.reply poll[:msg]
   end

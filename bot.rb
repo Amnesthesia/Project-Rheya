@@ -278,7 +278,7 @@ bot = Cinch::Bot.new do
 
     # Set up server
     conf.server = "irc.codetalk.io"
-    conf.channels = ["#rhey"]
+    conf.channels = ["#lobby", "#rheya"]
     conf.port = 6697
     conf.ssl.use = true
 

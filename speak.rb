@@ -473,6 +473,7 @@ class Mouth
     reply = Hash.new
     reply[:id] = poll[:id]
     reply[:msg] = title + "\n" + ans
+    return reply
   end
 
 

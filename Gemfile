@@ -2,6 +2,9 @@ source 'https://rubygems.org'
 
 
 gem "cinch", "~> 2.0.4"
+gem "htmlentities"
+gem "hpricot"
+gem "wikicloth"
 gem "mechanize"
 gem "sqlite3"
 gem "twitter"

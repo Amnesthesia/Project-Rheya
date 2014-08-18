@@ -457,17 +457,17 @@ class Mouth
     end
     poll = @poll_db.get_first_row("SELECT id, question, user FROM polls WHERE id = ?", id)
     puts poll
-    answers = @poll_db.execute("SELECT id, number, answer, (SELECT count(*) FROM votes WHERE poll_id = ? AND votes.answer_id = answers.id) as votes FROM answers WHERE poll_id = ? ORDER BY number ASC;", poll["id"], poll["id"])
+    answers = @poll_db.execute("SELECT id, number, answer, (SELECT count(*) FROM votes WHERE poll_id = ? AND votes.answer_id = answers.id) as votes FROM answers WHERE poll_id = ? ORDER BY votes ASC;", poll["id"], poll["id"])
     puts answers
     title = poll["user"] + ": " + poll["question"]
     ans = ""
 
     answers.each do |a|
       ans += "\n"
+      ans += "("+a["votes"].to_s+") "
       ans += a["number"].to_s
       ans += ". "
       ans += a["answer"]
-      ans += " ("+a["votes"].to_s+")"
     end
 
     reply = Hash.new

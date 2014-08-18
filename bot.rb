@@ -215,15 +215,27 @@ class RheyaIRC
 
   def new_poll(msg)
     message = strip_command(msg.message)
-    @last_poll_id = @rheya.ears.add_poll(msg.user.to_s, message)
-    msg.reply "Poll created: "+message+" (#"+@last_poll_id.to_s+")"
-    msg.reply "Now add possible answers with !answer"
+    return get_poll(msg) if message =~ /\d+/
+    if message.include? ";"
+      spl = message.split(";")
+      pl = spl.shift
+      @last_poll_id = @rheya.ears.add_poll(msg.user.to_s, pl)
+      msg.reply "Poll created: "+pl
+      spl.each do |answer|
+        answer = @rheya.ears.add_answer(@last_poll_id, answer)
+        msg.reply answer["number"].to_s + ". "+answer["answer"]
+      end
+    else
+      @last_poll_id = @rheya.ears.add_poll(msg.user.to_s, message)
+      msg.reply "Poll created: "+message+" (#"+@last_poll_id.to_s+")"
+      msg.reply "You can add answers with !answer"
+    end
   end
 
   def get_poll(msg)
     @last_poll_id ||= @rheya.ears.get_last_poll_id
     message = strip_command(msg.message)
-    poll = @rheya.mouth.get_poll(message||@last_poll_id)
+    poll = @rheya.mouth.get_poll(message.to_i||@last_poll_id)
     @last_poll_id = poll[:id]
     msg.reply poll[:msg]
   end
@@ -257,6 +269,7 @@ class RheyaIRC
     msg.reply "  !remember <message> - Store a quote or message"
     msg.reply "  !reply <message> - Reply to the last person who tweeted me"
     msg.reply "  !tweet <message> - Tweet a message from @CodetalkIRC"
+    msg.reply "  !poll question;answer1;answer2;answer3 - Create a poll with predefined answers"
     msg.reply "  !poll [question] - Create a new poll if a question is supplied, or fetches the last poll created"
     msg.reply "  !answer <answer> - Adds a new answer to the last viewed poll"
     msg.reply "  !vote <number> - Votes for an answer in the last viewed poll"

@@ -158,14 +158,17 @@ class Mouth
       prev_word = word[1]
       all_words << sentence
       all_words << prev_word
+      sentence << " "
       sentence << word[1]
     elsif msg.split(/\s+/).count > 2
       word = msg.split(/\s+/)
       rnd = Random.rand((word.count-2))
-      sentence = word.at(rnd)
-      prev_word = word.at(rnd+1)
+      sentence = word[-2]
+      prev_word = word[-1]
       all_words << sentence
       all_words << prev_word
+      sentence << " "
+      sentence << prev_word
     elsif msg == nil or msg.empty? or msg == "" or msg.length<1
       word = @db.get_first_value("SELECT word FROM words ORDER BY RANDOM() LIMIT 1;")
       sentence = word
@@ -271,6 +274,7 @@ class Mouth
         end
       else
         sentence = word.at(word.count-2)
+        sentence << " "
         prev_word[:word] = word.last
       end
     elsif msg == nil or msg.empty?
@@ -301,7 +305,7 @@ class Mouth
         end
       end
 
-      if prev_word[:emoticon] == true and remember_previous_word != nil
+      if prev_word[:emoticon] == false and remember_previous_word != nil
 
         emot = @db.get_first_value("SELECT emotion_index FROM pair_emotions WHERE pair_id = (SELECT id FROM pairs WHERE word_id = ? AND pair_id = ? LIMIT 1) ORDER BY RANDOM() LIMIT 1",remember_previous_word[:word],prev_word["word"])
         unless emot == nil
@@ -457,7 +461,7 @@ class Mouth
     end
     poll = @poll_db.get_first_row("SELECT id, question, user FROM polls WHERE id = ?", id)
     puts poll
-    answers = @poll_db.execute("SELECT id, number, answer, (SELECT count(*) FROM votes WHERE poll_id = ? AND votes.answer_id = answers.id) as votes FROM answers WHERE poll_id = ? ORDER BY votes ASC;", poll["id"], poll["id"])
+    answers = @poll_db.execute("SELECT id, number, answer, (SELECT count(*) FROM votes WHERE poll_id = ? AND votes.answer_id = answers.id) as votes FROM answers WHERE poll_id = ? ORDER BY votes DESC;", poll["id"], poll["id"])
     puts answers
     title = poll["user"] + ": " + poll["question"]
     ans = ""

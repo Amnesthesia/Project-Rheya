@@ -140,6 +140,9 @@ class RheyaIRC
     elsif context.count > 0
       puts "Speaking on word: " + context[0]
       msg.reply @rheya.speak(context[0],context)
+    else
+      puts "Speaking on word: %s, %s" % [message.split(/\s+/).last, message.split(/\s+/)[-2]]
+      say message
     end
   end
 
@@ -215,7 +218,7 @@ class RheyaIRC
 
   def new_poll(msg)
     message = strip_command(msg.message)
-    return get_poll(msg) if message =~ /\d+/
+    get_poll(msg) and return if message =~ /\d+/
     if message.include? ";"
       spl = message.split(";")
       pl = spl.shift
@@ -236,7 +239,7 @@ class RheyaIRC
     @last_poll_id ||= @rheya.ears.get_last_poll_id
     message = strip_command(msg.message)
     poll = @rheya.mouth.get_poll(message.to_i||@last_poll_id)
-    
+
     @last_poll_id = poll[:id]
     msg.reply poll[:msg]
   end

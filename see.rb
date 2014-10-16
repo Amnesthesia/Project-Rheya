@@ -305,8 +305,12 @@ class Eye
 
     if msg =~ /[\.\?!;]/
       msg.split(/[\.\?!;]/)
-      msg.each do |m|
-        process_sentence(m)
+      if msg.is_a? String
+        process_sentence(msg)
+      else
+        msg.each do |m|
+          process_sentence(m)
+        end
       end
     else
       process_sentence(msg)

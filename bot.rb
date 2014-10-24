@@ -33,6 +33,8 @@ class RheyaIRC
   match /^!poll$/, {method: :last_poll}
   match /^!vote\s+\d/, {method: :vote}
   match /^!answer\s+\w+/, {method: :add_answer}
+  match /^!8ball\s+\w+/, {method: :eightball}
+  match /^!roll\s*/, {method: :dice}
 
   timer 600, method: :mentioned
 
@@ -266,23 +268,64 @@ class RheyaIRC
     msg.reply answer["number"].to_s + ". " + answer["answer"]
   end
 
+  def dice(msg)
+    message = strip_command(msg.message)
+    if(message =~ /(\d+)+\s+(\d+)/)
+      num = message.match(/(\d+)+\s+(\d+)/)
+      msg.reply Random.rand(num[1].to_i..num[2].to_i).to_s
+    elsif(message=~ /(\d+)/)
+      num = message.match(/\d+/)
+      msg.reply Random.rand(num[0].to_i).to_s
+    else
+      msg.reply Random.rand(1..6).to_s
+    end
+  end
+
+  def eightball(msg)
+    ball = []
+    ball << "Signs point to yes."
+    ball << "Yes."
+    ball << "Reply hazy, try again."
+    ball << "Without a doubt."
+    ball << "My sources say no."
+    ball << "As I see it, yes."
+    ball << "You may rely on it."
+    ball << "Concentrate and ask again."
+    ball << "Outlook not so good."
+    ball << "It is decidedly so."
+    ball << "Better not tell you now."
+    ball << "Very doubtful."
+    ball << "Yes - definitely."
+    ball << "It is certain."
+    ball << "Cannot predict now."
+    ball << "Most likely."
+    ball << "Ask again later."
+    ball << "My reply is no."
+    ball << "Outlook good."
+    ball << "Don't count on it."
+
+    msg.reply ball[Random.rand(ball.length)]
+  end
+
   def print_help(msg)
-    msg.reply "I know the following commands ([] is optional, <> is required):"
-    msg.reply "  !markov [word] - Default markov ramble"
-    msg.reply "  !mentions - Gets the latest tweets meant for meeeeee :D"
-    msg.reply "  !nsfw <[user] state> - Sets status of NSFW by default for specified user (or if no user specified, from the one who requested it)"
-    msg.reply "  !recall <#ID>- I'll tell you a random quote or message if I remember it (if your provide a specific ID I'll pull it out for you)"
-    msg.reply "  !remember <message> - Store a quote or message"
-    msg.reply "  !reply <message> - Reply to the last person who tweeted me"
-    msg.reply "  !tweet <message> - Tweet a message from @CodetalkIRC"
-    msg.reply "  !poll question;answer1;answer2;answer3 - Create a poll with predefined answers"
-    msg.reply "  !poll [question] - Create a new poll if a question is supplied, or fetches the last poll created"
-    msg.reply "  !answer <answer> - Adds a new answer to the last viewed poll"
-    msg.reply "  !vote <number> - Votes for an answer in the last viewed poll"
-    msg.reply "  !speak [word] - If you give me a word or a long sentence, I'll try to stay on topic. Note: try. Otherwise I'll just ramble."
-    msg.reply "  !stats - I'll show you who's the loudest in here"
-    msg.reply "  !wiki <page name> - I'll try to find you the wiki page and give you a summary"
-    msg.reply ""
+    msg.user.notice "I know the following commands ([] is optional, <> is required):"
+    msg.user.notice "  !8ball [question] - Generic 8ball"
+    msg.user.notice "  !markov [word] - Default markov ramble"
+    msg.user.notice "  !mentions - Gets the latest tweets meant for meeeeee :D"
+    msg.user.notice "  !nsfw <[user] state> - Sets status of NSFW by default for specified user (or if no user specified, from the one who requested it)"
+    msg.user.notice "  !recall <#ID>- I'll tell you a random quote or message if I remember it (if your provide a specific ID I'll pull it out for you)"
+    msg.user.notice "  !remember <message> - Store a quote or message"
+    msg.user.notice "  !reply <message> - Reply to the last person who tweeted me"
+    msg.user.notice "  !roll [n] [[n]] - Generates a random number between 1-6. You can set a max value, or a range to roll between."
+    msg.user.notice "  !tweet <message> - Tweet a message from @CodetalkIRC"
+    msg.user.notice "  !poll question;answer1;answer2;answer3 - Create a poll with predefined answers"
+    msg.user.notice "  !poll [question] - Create a new poll if a question is supplied, or fetches the last poll created"
+    msg.user.notice "  !answer <answer> - Adds a new answer to the last viewed poll"
+    msg.user.notice "  !vote <number> - Votes for an answer in the last viewed poll"
+    msg.user.notice "  !speak [word] - If you give me a word or a long sentence, I'll try to stay on topic. Note: try. Otherwise I'll just ramble."
+    msg.user.notice "  !stats - I'll show you who's the loudest in here"
+    msg.user.notice "  !wiki <page name> - I'll try to find you the wiki page and give you a summary"
+    msg.user.notice ""
   end
 
 end

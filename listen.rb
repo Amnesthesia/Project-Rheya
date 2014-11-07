@@ -27,6 +27,8 @@ class Ear
   #
   #
   def create_structure
+    # Create variables table
+    @db.execute("create table if not exists variables(key varchar(255) PRIMARY KEY, value TEXT())");
 
     # Create quotes table
     @db.execute("create table if not exists quotes (id INTEGER PRIMARY KEY, quote TEXT);")
@@ -106,6 +108,35 @@ class Ear
     puts "I added #{msg} to quotes database"
     return @db.get_first_value("SELECT id FROM quotes ORDER BY id DESC LIMIT 1;")
   end
+
+  #
+  # Adds a variable to the variable table
+  #
+  # @param string msg
+  #
+  def set_variable(msg)
+    key = msg.split(" ").first
+    value = msg.split(" ")
+    value.delete_at(0)
+
+    msg = msg.join(" ") if msg.count > 1
+
+    @db.execute("INSERT OR REPLACE INTO variables VALUES(?,?)",key,value)
+
+    puts "I added #{msg} to quotes database"
+    return @db.get_first_value("SELECT key FROM variables WHERE key = ? LIMIT 1;", key)
+  end
+
+  #
+  # Fetches a specific variable from the variable table
+  #
+  # @return string
+  #
+  def get_variable(word)
+    quote = @db.get_first_value("SELECT value FROM variables WHERE key = ? LIMIT 1;",word)
+    return quote
+  end
+
 
   #
   # Fetches a random quote from the quotes database

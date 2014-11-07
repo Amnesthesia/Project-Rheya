@@ -11,6 +11,10 @@ class RheyaIRC
 
   match /https?:\/\/[\S]+/, { method: :get_title}
   match /.+/, { method: :learn }
+  match /^\w=.+/, { method: :set_variable}
+  match /^!set\s+\w\s+\w+/, { method: :set_variable }
+  match /^!get\s+\w+/, {method: :get_variable}
+  match /^\w\?/, {method: :get_variable}
   match /^!speak.*/, { method: :say }
   match /^!remember\s.+/, { method: :remember }
   match /^!recall.*/, {method: :recall }
@@ -76,6 +80,30 @@ class RheyaIRC
   def nouns(msg)
     msg.reply "I think the context of that was (reduced least important nouns if too many found): " + @rheya.brain.get_topic(strip_command(msg.message)).to_s
   end
+
+  def get_variable(msg)
+    message = msg.message
+    message.gsub!(/!get\s+/) if message.match(/^!get\s+/)
+    message.gsub!(/\?.*/) if message.match(/^\w\?/)
+    key = msg.split(" ").shift if message.is_a? Array
+    key = msg if message.is_a? String
+
+    msg.reply "#{key.capitalize} is: %s" % @rheya.ears.get_variable(key)
+  end
+
+  def set_variable(msg)
+    message = msg.message
+    message.gsub!(/!set\s+/) if message.match(/^!set\s+/)
+    message.gsub!(/^\w=\s*/) if message.match(/^\w=.*/)
+    key = msg.split(" ").shift if message.is_a? Array
+    key = msg if message.is_a? String
+
+    replies = ["Thanks for explaining what %s was :)", "Thanks for explaining %s :x", "Yay! %s! I learned something new :D", "Cool, a word. Nice.", "Nice word man, it'll echo!", "Words are like scooby snacks for me <3"]
+
+    msg.reply replies.at(Random.rand(replies.count)).to_s % @rheya.ears.set_variable(key,value)
+  end
+
+
 
   def learn(msg)
     if msg.user.to_s == "Foxboron" or msg.user.to_s == "Fox" and msg.message =~ /\s+(to)$/
@@ -310,6 +338,8 @@ class RheyaIRC
   def print_help(msg)
     msg.user.notice "I know the following commands ([] is optional, <> is required):"
     msg.user.notice "  !8ball [question] - Generic 8ball"
+    msg.user.notice "  !set <variable> <value> (or just var=value)- Links the first word to what succeeds it, and allows you to fetch it again"
+    msg.user.notice "  !echo <variable> - Prints the information linked to this variable"
     msg.user.notice "  !markov [word] - Default markov ramble"
     msg.user.notice "  !mentions - Gets the latest tweets meant for meeeeee :D"
     msg.user.notice "  !nsfw <[user] state> - Sets status of NSFW by default for specified user (or if no user specified, from the one who requested it)"
@@ -334,7 +364,7 @@ bot = Cinch::Bot.new do
   configure do |conf|
 
     # Set up personality
-    conf.nick = "Rheyaa"
+    conf.nick = "Rheya, Inara"
     conf.user = "Rheyaa"
     conf.realname = "Rheya"
 

@@ -82,7 +82,7 @@ class RheyaIRC
   end
 
   def get_variable(msg)
-    message = msg.message
+    message = msg.message.to_s
     message.gsub!(/!get\s+/) if message.match(/^!get\s+/)
     message.gsub!(/\?.*/) if message.match(/^\w\?/)
     key = msg.split(" ").shift if message.is_a? Array
@@ -92,15 +92,16 @@ class RheyaIRC
   end
 
   def set_variable(msg)
-    message = msg.message
-    message.gsub!(/!set\s+/) if message.match(/^!set\s+/)
+    message = msg.message.to_s
+    message.gsub!(/!set\s+/) if message.match(/^!set\s+.*/)
     message.gsub!(/^\w=\s*/) if message.match(/^\w=.*/)
-    key = msg.split(" ").shift if message.is_a? Array
-    key = msg if message.is_a? String
+    key = message.split(/\s/).shift if message.is_a? Array
+    key = message if message.is_a? String
+    message = message.join(" ") if message.is_a? Array
 
     replies = ["Thanks for explaining what %s was :)", "Thanks for explaining %s :x", "Yay! %s! I learned something new :D", "Cool, a word. Nice.", "Nice word man, it'll echo!", "Words are like scooby snacks for me <3"]
 
-    msg.reply replies.at(Random.rand(replies.count)).to_s % @rheya.ears.set_variable(key,value)
+    msg.reply replies.at(Random.rand(replies.count)).to_s % @rheya.ears.set_variable(key,message)
   end
 
 

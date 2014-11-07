@@ -85,8 +85,8 @@ class RheyaIRC
     message = msg.message.to_s
     message.gsub!(/!get\s+/) if message.match(/^!get\s+/)
     message.gsub!(/\?.*/) if message.match(/^\w+\?/)
-    key = msg.split(" ").shift if message.is_a? Array
-    key = msg if message.is_a? String
+    key = message.split(" ").shift if message.is_a? Array
+    key = message if message.is_a? String
 
     msg.reply "#{key.capitalize} is: %s" % @rheya.ears.get_variable(key)
   end

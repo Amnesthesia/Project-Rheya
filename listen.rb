@@ -118,7 +118,7 @@ class Ear
 
     @db.execute("INSERT OR REPLACE INTO variables VALUES(?,?)",key,value)
 
-    puts "I added #{msg} to variable table database"
+    puts "I added #{key} to variable table database"
     return key
   end
 

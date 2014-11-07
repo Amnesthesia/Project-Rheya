@@ -28,7 +28,7 @@ class Ear
   #
   def create_structure
     # Create variables table
-    @db.execute("create table if not exists variables(key varchar(255) PRIMARY KEY, value TEXT())");
+    @db.execute("create table if not exists variables(key varchar(255) PRIMARY KEY, value TEXT);");
 
     # Create quotes table
     @db.execute("create table if not exists quotes (id INTEGER PRIMARY KEY, quote TEXT);")

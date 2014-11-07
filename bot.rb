@@ -94,7 +94,7 @@ class RheyaIRC
   def set_variable(msg)
     message = msg.message.to_s
     message.gsub!(/!set\s+/,'') if message =~ /^!set\s+.*/
-    message.gsub!(/^\w+=\s*/,'') if message =~ /^\w+=.*/
+    message.gsub!(/=/,' ') if message =~ /^\w+=.*/
 
     if message =~ /\s/
       message = message.split(/\s/)

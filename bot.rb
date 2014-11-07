@@ -83,8 +83,8 @@ class RheyaIRC
 
   def get_variable(msg)
     message = msg.message.to_s
-    message.gsub!(/!get\s+/) if message.match(/^!get\s+/)
-    message.gsub!(/\?.*/) if message.match(/^\w+\?/)
+    message.gsub!(/!get\s+/,'') if message =~ /^!get\s+/
+    message.gsub!(/\?.*/,'') if message =~ /^\w+\?/
     key = message.split(" ").shift if message.is_a? Array
     key = message if message.is_a? String
 
@@ -93,8 +93,8 @@ class RheyaIRC
 
   def set_variable(msg)
     message = msg.message.to_s
-    message.gsub!(/!set\s+/) if message =~ /^!set\s+.*/
-    message.gsub!(/^\w+=\s*/) if message =~ /^\w+=.*/
+    message.gsub!(/!set\s+/,'') if message =~ /^!set\s+.*/
+    message.gsub!(/^\w+=\s*/,'') if message =~ /^\w+=.*/
 
     if message =~ /\s/
       message = message.split(/\s/)

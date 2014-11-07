@@ -11,10 +11,10 @@ class RheyaIRC
 
   match /https?:\/\/[\S]+/, { method: :get_title}
   match /.+/, { method: :learn }
-  match /^\w=.+/, { method: :set_variable}
-  match /^!set\s+\w\s+\w+/, { method: :set_variable }
+  match /^\w+=.+/, { method: :set_variable}
+  match /^!set\s+\w+\s+\w+/, { method: :set_variable }
   match /^!get\s+\w+/, {method: :get_variable}
-  match /^\w\?/, {method: :get_variable}
+  match /^\w+\?/, {method: :get_variable}
   match /^!speak.*/, { method: :say }
   match /^!remember\s.+/, { method: :remember }
   match /^!recall.*/, {method: :recall }
@@ -84,7 +84,7 @@ class RheyaIRC
   def get_variable(msg)
     message = msg.message.to_s
     message.gsub!(/!get\s+/) if message.match(/^!get\s+/)
-    message.gsub!(/\?.*/) if message.match(/^\w\?/)
+    message.gsub!(/\?.*/) if message.match(/^\w+\?/)
     key = msg.split(" ").shift if message.is_a? Array
     key = msg if message.is_a? String
 
@@ -94,8 +94,8 @@ class RheyaIRC
   def set_variable(msg)
     message = msg.message.to_s
     message.gsub!(/!set\s+/) if message.match(/^!set\s+.*/)
-    message.gsub!(/^\w=\s*/) if message.match(/^\w=.*/)
-    key = message.split(/\s/).shift if message.is_a? Array
+    message.gsub!(/^\w+=\s*/) if message.match(/^\w+=.*/)
+    key = message.split(/\s/).shift if message.match(/\s/)
     key = message if message.is_a? String
     message = message.join(" ") if message.is_a? Array
 

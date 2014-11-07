@@ -114,12 +114,7 @@ class Ear
   #
   # @param string msg
   #
-  def set_variable(msg)
-    key = msg.split(" ").first
-    value = msg.split(" ")
-    value.delete_at(0)
-
-    msg = msg.join(" ") if msg.count > 1
+  def set_variable(key, value)
 
     @db.execute("INSERT OR REPLACE INTO variables VALUES(?,?)",key,value)
 

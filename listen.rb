@@ -143,6 +143,7 @@ class Ear
     tags = []
     variables.each do |k|
       tags << k[:key]
+    end
     return tags
   end
 

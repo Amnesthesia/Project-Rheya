@@ -116,7 +116,7 @@ class Ear
   #
   def set_variable(key, value)
 
-    @db.execute("INSERT OR REPLACE INTO variables VALUES(?,?)",key,value)
+    @db.execute("INSERT OR REPLACE INTO variables VALUES(?,?)",key.downcase,value)
 
     puts "I added #{key} to variable table database"
     return key
@@ -129,7 +129,7 @@ class Ear
   #
   def get_variable(word)
     word = word.split(" ").first if word.split(" ").count > 1
-    quote = @db.get_first_value("SELECT value FROM variables WHERE key = ? LIMIT 1;",word)
+    quote = @db.get_first_value("SELECT value FROM variables WHERE key = ? LIMIT 1;",word.downcase)
     return quote
   end
 

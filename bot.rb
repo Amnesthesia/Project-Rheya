@@ -14,6 +14,7 @@ class RheyaIRC
   match /^\w+=.+/, { method: :set_variable}
   match /^!set\s+\w+\s+\w+/, { method: :set_variable }
   match /^!get\s+\w+/, {method: :get_variable}
+  match /^what\?/i, { method: :list_tags }
   match /^\w+\?/, {method: :get_variable}
   match /^!speak.*/, { method: :say }
   match /^!remember\s.+/, { method: :remember }
@@ -79,6 +80,16 @@ class RheyaIRC
 
   def nouns(msg)
     msg.reply "I think the context of that was (reduced least important nouns if too many found): " + @rheya.brain.get_topic(strip_command(msg.message)).to_s
+  end
+
+  def list_tags(msg)
+    tags = rheya.ears.get_tags
+
+    if tags.join(" ").length < 600
+      msg.reply tags.join(" ").to_s
+    else
+      msg.user.notice tags.join(" ").to_s
+    end
   end
 
   def get_variable(msg)

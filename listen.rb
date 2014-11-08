@@ -133,6 +133,16 @@ class Ear
     return quote
   end
 
+  #
+  # Fetches a random quote from the quotes database
+  #
+  # @return string
+  #
+  def get_tags
+    variables = @db.execute("SELECT key FROM variables ORDER BY key ASC;")
+
+    return variables
+  end
 
   #
   # Fetches a random quote from the quotes database

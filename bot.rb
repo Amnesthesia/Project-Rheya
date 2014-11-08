@@ -86,9 +86,9 @@ class RheyaIRC
     tags = rheya.ears.get_tags
 
     if tags.join(" ").length < 600
-      msg.reply tags.join(" ").to_s
+      msg.reply tags.join(" ")
     else
-      msg.user.notice tags.join(" ").to_s
+      msg.user.notice tags.join(" ")
     end
   end
 

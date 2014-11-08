@@ -142,8 +142,8 @@ class Ear
     variables = @db.execute("SELECT key FROM variables ORDER BY key ASC;")
     tags = []
     variables.each do |k|
-      tags << k["key"]["key"]
-      puts k["key"]["key"]
+      tags << k.to_a()["key"].to_s
+      puts k.to_a()["key"].to_s
     end
     return tags
   end

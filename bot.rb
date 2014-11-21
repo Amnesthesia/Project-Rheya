@@ -14,8 +14,8 @@ class RheyaIRC
   match /^\w+=.+/, { method: :set_variable}
   match /^!set\s+\w+\s+\w+/, { method: :set_variable }
   match /^!get\s+\w+/, {method: :get_variable}
-  match /^what\?/i, { method: :list_tags }
-  match /^\w+\?/, {method: :get_variable}
+  match /^Rheya[:,]*\s*what\?/i, { method: :list_tags }
+  match /^Rheya[:,]*\s*\w+\?/i, {method: :get_variable}
   match /^!speak.*/, { method: :say }
   match /^!remember\s.+/, { method: :remember }
   match /^!recall.*/, {method: :recall }
@@ -95,6 +95,7 @@ class RheyaIRC
   def get_variable(msg)
     message = msg.message.to_s
     message.gsub!(/!get\s+/,'') if message =~ /^!get\s+/
+    message.gsub!(/!echo\s+/,'') if message =~ /^!echo\s+/
     message.gsub!(/\?.*/,'') if message =~ /^\w+\?/
     key = message.split(" ").shift if message.is_a? Array
     key = message if message.is_a? String

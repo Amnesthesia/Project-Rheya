@@ -94,6 +94,7 @@ class RheyaIRC
 
   def get_variable(msg)
     message = msg.message.to_s
+    message.gsub!(/Rheya[:,]*\s+/i) if message =~ /^Rheya[:,]*\s+/i
     message.gsub!(/!get\s+/,'') if message =~ /^!get\s+/
     message.gsub!(/!echo\s+/,'') if message =~ /^!echo\s+/
     message.gsub!(/\?.*/,'') if message =~ /^\w+\?/

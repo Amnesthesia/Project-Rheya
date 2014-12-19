@@ -46,6 +46,10 @@ class RheyaIRC
   match /^!8ball\s+\w+/, {method: :eightball}
   match /^!roll\s*/, {method: :dice}
   match /^!seen\s\w+/, {method: :last_seen}
+  match /^!addgreeting\s\w+/, {method: :add_greeting}
+  match /^!rmgreeting\s\d+/, {method: :remove_greeting}
+  match /^!greet\s\w+/, {method: :greet }
+  match /^!welcome\s\w+/, {method: :greet }
 
   timer 600, method: :mentioned
 
@@ -65,10 +69,26 @@ class RheyaIRC
       @rheya.eyes.seen(m.user.to_s)
 
       if stats.nil? or stats.empty?
-        m.reply "Welcome to Nangiala, %s" % m.user.to_s
+        m.reply @rheya.eyes.get_greeting(m.user.to_s)
       else
         puts "Apparently stats was %s" % stats
       end
+  end
+
+  def add_greeting(msg)
+    return unless msg.user.oper?
+    greeting = strip_command(msg.message)
+    msg.reply @rheya.eyes.add_greeting(greeting)
+  end
+
+  def remove_greeting(msg)
+    return unless msg.user.oper?
+    id = strip_command(msg.message)
+    msg.reply @rheya.eyes.remove_greeting(id.to_i)
+  end
+
+  def greet(msg)
+    msg.reply @rheya.eyes.get_greeting(strip_command(msg.message))
   end
 
   def get_title(m)
@@ -387,6 +407,9 @@ class RheyaIRC
   def print_help(msg)
     msg.user.notice "I know the following commands ([] is optional, <> is required):"
     msg.user.notice "  !8ball [question] - Generic 8ball"
+    msg.user.notice "  !greet <user> - Force greet a user"
+    msg.user.notice "  !addgreeting <greet> - OPER ONLY: Adds a new greeting. USER will be replaced by nick when greeting."
+    msg.user.notice "  !rmgreeting <id> - OPER ONLY: Removes a greeting by its ID. "
     msg.user.notice "  !set <variable> <value> (or just var=value)- Links the first word to what succeeds it, and allows you to fetch it again"
     msg.user.notice "  !echo <variable> - Prints the information linked to this variable"
     msg.user.notice "  !markov [word] - Default markov ramble"
@@ -396,13 +419,13 @@ class RheyaIRC
     msg.user.notice "  !remember <message> - Store a quote or message"
     msg.user.notice "  !reply <message> - Reply to the last person who tweeted me"
     msg.user.notice "  !roll [n] [[n]] - Generates a random number between 1-6. You can set a max value, or a range to roll between."
-    msg.user.notice "  !tweet <message> - Tweet a message from @CodetalkIRC"
     msg.user.notice "  !poll question;answer1;answer2;answer3 - Create a poll with predefined answers"
     msg.user.notice "  !poll [question] - Create a new poll if a question is supplied, or fetches the last poll created"
     msg.user.notice "  !answer <answer> - Adds a new answer to the last viewed poll"
     msg.user.notice "  !vote <number> - Votes for an answer in the last viewed poll"
+    msg.user.notice "  !seen <username> - Last time a user was seen"
     msg.user.notice "  !speak [word] - If you give me a word or a long sentence, I'll try to stay on topic. Note: try. Otherwise I'll just ramble."
-    msg.user.notice "  !stats - I'll show you who's the loudest in here"
+    msg.user.notice "  !stats [username | list size] - I'll show you who's the loudest in here, or request specific user data, or a number for how big top list"
     msg.user.notice "  !wiki <page name> - I'll try to find you the wiki page and give you a summary"
     msg.user.notice ""
   end

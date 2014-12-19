@@ -409,20 +409,83 @@ class Mouth
   # @return array
   #
   def get_statistics(arg = '')
-    data = @db.execute("SELECT * FROM statistics ORDER BY lines DESC;")
+    data = @db.execute("SELECT * FROM statistics ORDER BY words DESC;")
 
     arr = []
     i = 1
     data.each do |d|
+      ratio = d['words']/d['lines']
+
       line = i.to_s + ". " + d['user']
       line << " with "
       line << d['lines'].to_s
       line << " lines and "
       line << d['words'].to_s
       line << " words"
+      line << " (%s AVG WPL)" % ratio.to_s
       arr << line
 
       break if i>5
+      i += 1
+    end
+
+    return arr
+  end
+
+  #
+  # Returns statistics for a specific user
+  # of speakable lines
+  #
+  # @return array
+  #
+  def get_user_statistics(arg = '')
+    data = @db.execute("SELECT * FROM statistics WHERE user = ? ORDER BY words DESC;", arg)
+
+    arr = []
+    i = 1
+    data.each do |d|
+      ratio = d['words']/d['lines']
+
+      line = i.to_s + ". " + d['user']
+      line << " with "
+      line << d['lines'].to_s
+      line << " lines and "
+      line << d['words'].to_s
+      line << " words"
+      line << " (%s AVG WPL)" % ratio.to_s
+      arr << line
+
+      break if i>5
+      i += 1
+    end
+
+    return arr
+  end
+
+  #
+  # Returns N stats
+  # of speakable lines
+  #
+  # @return array
+  #
+  def get_n_statistics(arg)
+    data = @db.execute("SELECT * FROM statistics ORDER BY words DESC;")
+    puts "Trying to list %s results " % arg.to_s
+    arr = []
+    i = 1
+    data.each do |d|
+      ratio = d['words']/d['lines']
+
+      line = i.to_s + ". " + d['user']
+      line << " with "
+      line << d['lines'].to_s
+      line << " lines and "
+      line << d['words'].to_s
+      line << " words"
+      line << " (%s AVG WPL)" % ratio.to_s
+      arr << line
+
+      break if i>=arg.to_i
       i += 1
     end
 

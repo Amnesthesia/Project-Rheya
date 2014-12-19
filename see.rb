@@ -36,6 +36,7 @@ class Eye
     create_structure
 
     # Prepare the database statements we use the most:
+
     @add_words = @db.prepare("INSERT OR IGNORE INTO words VALUES (NULL, ?);")
     @add_noun = @db.prepare("INSERT OR IGNORE INTO nouns (id, noun) VALUES (NULL, ?);")
     @add_context = @db.prepare("INSERT OR IGNORE INTO context (id,noun_id, pair_identifier) VALUES ((SELECT id FROM context WHERE noun_id = (SELECT id FROM nouns WHERE noun = ?) AND pair_identifier = (SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?))), (SELECT id FROM nouns WHERE noun = ?),(SELECT id FROM pairs WHERE word_id = (SELECT id FROM words WHERE word = ?) AND pair_id = (SELECT id FROM words WHERE word = ?)));")
@@ -44,7 +45,7 @@ class Eye
     @pair_emotion = @db.prepare("INSERT OR REPLACE INTO pair_emotions (id, pair_id, emotion_index, tripair) VALUES ((SELECT id FROM pair_emotions WHERE pair_id = (SELECT id FROM pairs ORDER BY id DESC LIMIT 1) AND emotion_index = ? AND tripair = 0), (SELECT id FROM pairs ORDER BY id DESC LIMIT 1), ?, 0);")
     @tripair_emotion = @db.prepare("INSERT OR REPLACE INTO pair_emotions (id, pair_id, emotion_index, tripair) VALUES ((SELECT id FROM pair_emotions WHERE pair_id = (SELECT id FROM tripairs ORDER BY id DESC LIMIT 1) AND emotion_index = ? AND tripair = 1), (SELECT id FROM tripairs ORDER BY id DESC LIMIT 1), ?, 1);")
     @add_statistics = @db.prepare("INSERT OR REPLACE INTO statistics (id, user, lines, words) VALUES ((SELECT id FROM statistics WHERE user = ? LIMIT 1), ?, ?, ?);")
-
+    @add_seen = @db.prepare("INSERT OR REPLACE INTO last_seen(user, seen_at) VALUES (?,CURRENT_TIMESTAMP);")
   end
 
   #
@@ -72,6 +73,8 @@ class Eye
     # Create statistics table
     @db.execute("create table if not exists statistics (id INTEGER PRIMARY KEY, user VARCHAR(15), lines INTEGER DEFAULT 1, words INTEGER DEFAULT 0);")
 
+    # Create last seen table
+    @db.execute("create table if not exists last_seen (user VARCHAR(50) PRIMARY KEY, seen_at DATETIME);")
 
 
     if @debug == true
@@ -79,6 +82,26 @@ class Eye
     end
 
   end
+
+  #
+  # Keeps track of all users last join
+  #
+  # @param string user
+  def seen(user)
+    puts "Should have updated last seen time for %s" % user.to_s
+    @add_seen.execute(user)
+  end
+
+  #
+  # Gets last time a user was seen joining
+  #
+  # @param string user
+  def last_seen(user)
+    seen_when = @db.get_first_value("SELECT seen_at FROM last_seen WHERE user = ? COLLATE NOCASE", user)
+    puts "Last time %s joined was last seen at timestamp " % [user.to_s, time_ago_in_words(DateTime.parse(seen_when))]
+    return "Last time %s joined was %s ago" % [user, time_ago_in_words(DateTime.parse(seen_when))]
+  end
+
 
   #
   # Keeps track of who talks the most; updates (or adds)

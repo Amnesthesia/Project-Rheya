@@ -2,6 +2,9 @@ require "rubygems"
 require "cinch"
 require "rubygems"
 require "mechanize"
+require "action_view"
+require "action_view/helpers"
+include ActionView::Helpers::DateHelper
 require "./rheya.rb"
 
 
@@ -29,6 +32,8 @@ class RheyaIRC
   match /^!help.*/, { method: :print_help }
   match /^!markov.*/, {method: :markov }
   match /^!nouns.*/, {method: :nouns }
+  match /^!stats\s\d*/, { method: :n_statistics }
+  match /^!stats\s\w+/, { method: :user_statistics }
   match /^!stats/, { method: :statistics }
   match /^!nsfw\s.+/, { method: :nsfw }
   match /^Rheya:\s.+/, { method: :speakback }
@@ -40,15 +45,30 @@ class RheyaIRC
   match /^!answer\s+\w+/, {method: :add_answer}
   match /^!8ball\s+\w+/, {method: :eightball}
   match /^!roll\s*/, {method: :dice}
+  match /^!seen\s\w+/, {method: :last_seen}
 
   timer 600, method: :mentioned
 
   # Speak every 1h 15min
   timer 4400, method: :say
 
+  # Check for new users on join
+  listen_to :join, { method: :greet_n_count }
+
   def initialize(*args)
     super
     @rheya = Rheya.new
+  end
+
+  def greet_n_count(m)
+      stats = @rheya.mouth.get_user_statistics(m.user.to_s)
+      @rheya.eyes.seen(m.user.to_s)
+
+      if stats.nil? or stats.empty?
+        m.reply "Welcome to Nangiala, %s" % m.user.to_s
+      else
+        puts "Apparently stats was %s" % stats
+      end
   end
 
   def get_title(m)
@@ -120,7 +140,9 @@ class RheyaIRC
     end
   end
 
-
+  def last_seen(msg)
+    msg.reply @rheya.eyes.last_seen(strip_command(msg.message))
+  end
 
   def learn(msg)
     if msg.user.to_s == "Foxboron" or msg.user.to_s == "Fox" and msg.message =~ /\s+(to)$/
@@ -143,6 +165,16 @@ class RheyaIRC
       msg.reply stat
     end
   end
+
+  def n_statistics(msg)
+      @rheya.mouth.get_n_statistics(strip_command(msg.message))
+  end
+
+  def user_statistics(msg)
+      @rheya.mouth.get_user_statistics(strip_command(msg.message))
+  end
+
+
 
   def say(msg)
     msg.message.downcase!
@@ -381,13 +413,13 @@ bot = Cinch::Bot.new do
   configure do |conf|
 
     # Set up personality
-    conf.nick = "Rheya, Inara"
+    conf.nick = "Inara"
     conf.user = "Rheyaa"
     conf.realname = "Rheya"
 
     # Set up server
-    conf.server = "irc.codetalk.io"
-    conf.channels = ["#lobby", "#rheya"]
+    conf.server = "irc.freenode.net"
+    conf.channels = ["#rheya"]
     conf.port = 6697
     conf.ssl.use = true
 

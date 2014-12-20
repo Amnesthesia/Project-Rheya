@@ -46,7 +46,7 @@ class Eye
     @tripair_emotion = @db.prepare("INSERT OR REPLACE INTO pair_emotions (id, pair_id, emotion_index, tripair) VALUES ((SELECT id FROM pair_emotions WHERE pair_id = (SELECT id FROM tripairs ORDER BY id DESC LIMIT 1) AND emotion_index = ? AND tripair = 1), (SELECT id FROM tripairs ORDER BY id DESC LIMIT 1), ?, 1);")
     @add_statistics = @db.prepare("INSERT OR REPLACE INTO statistics (id, user, lines, words) VALUES ((SELECT id FROM statistics WHERE user = ? LIMIT 1), ?, ?, ?);")
     @add_seen = @db.prepare("INSERT OR REPLACE INTO last_seen(user, seen_at) VALUES (?,CURRENT_TIMESTAMP);")
-    @add_greeting = @db.prepare("INSERT OR REPLACE INTO greetings(greet) VALUES (?);")
+    @add_greeting = @db.prepare("INSERT OR REPLACE INTO greetings(greet,user) VALUES (?,?);")
   end
 
   #
@@ -78,7 +78,7 @@ class Eye
     @db.execute("create table if not exists last_seen (user VARCHAR(50) PRIMARY KEY, seen_at DATETIME);")
 
     # Create last seen table
-    @db.execute("create table if not exists greetings (id INTEGER PRIMARY KEY, greet VARCHAR(255));")
+    @db.execute("create table if not exists greetings (id INTEGER PRIMARY KEY, greet VARCHAR(255), user VARCHAR(255));")
 
 
     if @debug == true
@@ -92,7 +92,8 @@ class Eye
   #
   #
   def get_greeting(user)
-    greeting = @db.get_first_row("SELECT * FROM greetings ORDER BY RANDOM() LIMIT 1;")
+    greeting = @db.get_first_row("SELECT * FROM greetings ORDER BY RANDOM() LIMIT 1;") if user.nil? or user.empty?
+    greeting = @db.get_first_row("SELECT * FROM greetings WHERE user = ? ORDER BY RANDOM() LIMIT 1;", user) unless user.nil? or user.empty?
     return "Welcome to Nangiala, %s" % user if greeting.nil? or greeting.empty?
     greet_id = greeting['id']
     greeting = greeting['greet']
@@ -107,8 +108,8 @@ class Eye
   # Adds a greeting
   #
   #
-  def add_greeting(greet)
-    @add_greeting.execute(greet)
+  def add_greeting(greet,user="")
+    @add_greeting.execute(greet,user)
     id = @db.get_first_value("SELECT id FROM greetings ORDER BY id DESC LIMIT 1;")
 
     return "Added greeting ##{id.to_s}"
@@ -466,7 +467,7 @@ class Eye
   # @param string search
   #
   def get_wiki(search)
-
+    return Wikipedia::article(search).first
     search = search.split(/\s+/).map {|w| w.capitalize }.join(' ')
     page = Wikipedia.find(search)
     g = JSON.parse(page.json)

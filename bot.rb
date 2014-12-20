@@ -34,7 +34,7 @@ class RheyaIRC
   match /^!nouns.*/, {method: :nouns }
   match /^!stats\s\d*/, { method: :n_statistics }
   match /^!stats\s\w+/, { method: :user_statistics }
-  match /^!stats/, { method: :statistics }
+  match /^!stats$/, { method: :statistics }
   match /^!nsfw\s.+/, { method: :nsfw }
   match /^Rheya:\s.+/, { method: :speakback }
   match /^Rheya,\s.+/, {method: :speakback }
@@ -78,7 +78,17 @@ class RheyaIRC
   def add_greeting(msg)
     return unless msg.user.oper?
     greeting = strip_command(msg.message)
-    msg.reply @rheya.eyes.add_greeting(greeting)
+
+    if greeting =~ /^\w+:\s*.+/
+      split = greeting.split(':')
+      nick = split.shift
+      greeting = split.join(":") if split.count > 1
+      greeting = greeting.to_s if split.count < 2
+      msg.reply @rheya.eyes.add_greeting(greeting,nick)
+    else
+      msg.reply @rheya.eyes.add_greeting(greeting)
+    end
+
   end
 
   def remove_greeting(msg)
@@ -187,11 +197,11 @@ class RheyaIRC
   end
 
   def n_statistics(msg)
-      @rheya.mouth.get_n_statistics(strip_command(msg.message))
+      msg.reply @rheya.mouth.get_n_statistics(strip_command(msg.message))
   end
 
   def user_statistics(msg)
-      @rheya.mouth.get_user_statistics(strip_command(msg.message))
+      msg.reply @rheya.mouth.get_user_statistics(strip_command(msg.message))
   end
 
 

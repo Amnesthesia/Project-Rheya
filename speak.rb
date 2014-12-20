@@ -469,7 +469,7 @@ class Mouth
   # @return array
   #
   def get_n_statistics(arg)
-    data = @db.execute("SELECT * FROM statistics ORDER BY words DESC;")
+    data = @db.execute("SELECT * FROM statistics ORDER BY words DESC LIMIT ?;", arg)
     puts "Trying to list %s results " % arg.to_s
     arr = []
     i = 1
